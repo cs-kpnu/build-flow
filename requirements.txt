@@ -1,0 +1,7 @@
+Django>=5.0
+psycopg2-binary
+Pillow
+openpyxl
+python-dotenv
+whitenoise
+gunicorn

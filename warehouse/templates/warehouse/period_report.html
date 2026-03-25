@@ -1,0 +1,112 @@
+{% extends 'warehouse/base.html' %}
+{% load static %}
+
+{% block title %}Оборотна відомість{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold"><i class="bi bi-calendar-range me-2"></i> Оборотна відомість матеріалів</h3>
+        <div class="d-flex gap-2 no-print">
+            {% if report_data %}
+            <a href="?export=excel&start_date={{ form.start_date.value|default:'' }}&end_date={{ form.end_date.value|default:'' }}&warehouse={{ form.warehouse.value|default:'' }}&category={{ form.category.value|default:'' }}" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+            </a>
+            {% endif %}
+            <button onclick="window.print()" class="btn btn-outline-secondary">
+                <i class="bi bi-printer me-1"></i>Друк
+            </button>
+        </div>
+    </div>
+
+    <!-- Фільтр -->
+    <div class="card shadow-sm mb-4 no-print border-0 bg-light">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="small fw-bold text-muted">{{ form.start_date.label }}</label>
+                    {{ form.start_date }}
+                </div>
+                <div class="col-md-3">
+                    <label class="small fw-bold text-muted">{{ form.end_date.label }}</label>
+                    {{ form.end_date }}
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="small fw-bold text-muted">{{ form.warehouse.label }}</label>
+                    {{ form.warehouse }}
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="small fw-bold text-muted">{{ form.category.label }}</label>
+                    {{ form.category }}
+                </div>
+
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search me-1"></i> Пошук
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Таблиця -->
+    {% if report_data %}
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-sm text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-start ps-3">Категорія</th>
+                        <th class="text-start">Матеріал</th>
+                        <th>Од.</th>
+                        <th class="text-end border-end">Поч. залишок</th>
+                        <th class="text-end text-success">Прихід</th>
+                        <th class="text-end text-danger border-end">Розхід</th>
+                        <th class="text-end fw-bold border-end bg-light">Кін. залишок</th>
+                        <th class="text-end pe-3">Сума (грн)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_data %}
+                    <tr>
+                        <td class="text-start ps-3 text-muted small fw-bold">{{ row.category }}</td>
+                        
+                        <td class="text-start fw-bold">{{ row.material.name }}</td>
+                        <td class="text-muted small">{{ row.material.unit }}</td>
+                        
+                        <!-- Початковий залишок -->
+                        <td class="text-end border-end bg-light">{{ row.start_balance }}</td>
+                        
+                        <!-- Обороти -->
+                        <td class="text-end text-success opacity-75">
+                            {% if row.income > 0 %}+{{ row.income }}{% else %}-{% endif %}
+                        </td>
+                        <td class="text-end text-danger opacity-75 border-end">
+                            {% if row.outcome > 0 %}-{{ row.outcome }}{% else %}-{% endif %}
+                        </td>
+                        
+                        <!-- Кінцевий залишок -->
+                        <td class="text-end fw-bold bg-light text-primary border-end">{{ row.end_balance }}</td>
+                        
+                        <td class="text-end pe-3 small">{{ row.total_value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td colspan="7" class="text-end border-end">Всього вартість залишків:</td>
+                        <td class="text-end pe-3 text-success">{{ total_value }} ₴</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% else %}
+        <div class="alert alert-info text-center mt-4 border-0 shadow-sm">
+            <i class="bi bi-info-circle me-2"></i> Натисніть "Пошук", щоб побачити дані, або змініть параметри фільтрації.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

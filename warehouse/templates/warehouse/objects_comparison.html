@@ -1,0 +1,93 @@
+{% extends 'warehouse/base.html' %}
+{% load static %}
+
+{% block title %}Порівняння об'єктів{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4 fw-bold"><i class="bi bi-buildings-fill me-2"></i> Порівняння об'єктів (Бюджети)</h3>
+
+    <!-- ГРАФІК -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-header bg-white border-0 fw-bold">
+            📊 Бюджет vs Фактичні витрати
+        </div>
+        <div class="card-body">
+            <div style="height: 400px; position: relative;">
+                <canvas id="comparisonChart"></canvas>
+                <div class="text-center text-muted small d-none mt-5" data-empty-msg="comparison">
+                    Немає даних для порівняння
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ТАБЛИЦЯ -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Деталізація по об'єктах</span>
+            <button onclick="window.print()" class="btn btn-sm btn-outline-secondary no-print"><i class="bi bi-printer"></i> Друк</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-center">
+                <thead class="bg-dark text-white">
+                    <tr>
+                        <th class="text-start ps-4">Об'єкт</th>
+                        <th>Бюджет</th>
+                        <th>Витрачено</th>
+                        <th>% Використання</th>
+                        <th class="text-end pe-4">Залишок</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr>
+                        <td class="text-start ps-4 fw-bold">{{ row.name }}</td>
+                        <td>{{ row.budget|floatformat:2 }} ₴</td>
+                        <td class="fw-bold text-danger">{{ row.spent|floatformat:2 }} ₴</td>
+                        <td>
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="progress flex-grow-1 me-2" style="height: 6px; max-width: 100px;">
+                                    <div class="progress-bar {% if row.percent > 100 %}bg-danger{% elif row.percent > 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ row.percent }}%">
+                                    </div>
+                                </div>
+                                <small class="fw-bold">{{ row.percent|floatformat:0 }}%</small>
+                            </div>
+                        </td>
+                        <td class="text-end pe-4 fw-bold text-success">
+                            {{ row.diff|floatformat:2 }} ₴
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">Склади не знайдені або у вас немає доступу.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- DATA FOR CHARTS -->
+{{ data|json_script:"comparison-data" }}
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Підключаємо локальний Chart.js (vendor) -->
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+
+<!-- Логіка графіків -->
+<script src="{% static 'warehouse/js/objects_comparison_charts.js' %}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.ObjectsComparisonCharts) {
+            window.ObjectsComparisonCharts.init();
+        }
+    });
+</script>
+{% endblock %}

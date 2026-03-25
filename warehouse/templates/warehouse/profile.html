@@ -1,0 +1,258 @@
+{% extends 'warehouse/base.html' %}
+
+{% block title %}Мій Профіль - БудСклад{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        border-radius: 16px;
+        color: white;
+        padding: 2rem;
+    }
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 4px solid rgba(255,255,255,0.3);
+        object-fit: cover;
+    }
+    .profile-avatar-placeholder {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 4px solid rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    .edit-avatar-btn {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: white;
+        border: 2px solid #0d6efd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .edit-avatar-btn:hover {
+        transform: scale(1.1);
+    }
+    .stat-card {
+        border: none;
+        border-radius: 12px;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    .warehouse-item {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+    .warehouse-item:hover {
+        border-color: #0d6efd;
+        background-color: #f8f9fa;
+    }
+    .warehouse-item.active {
+        border-color: #198754;
+        background-color: #d1e7dd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5" style="max-width: 900px;">
+
+    {# === PROFILE HEADER === #}
+    <div class="profile-header mb-4 shadow">
+        <div class="d-flex align-items-center">
+            <div class="position-relative me-4">
+                {% if user.profile.photo %}
+                    <img src="{{ user.profile.photo.url }}" class="profile-avatar shadow" alt="Фото профілю">
+                {% else %}
+                    <div class="profile-avatar-placeholder">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+                <button class="edit-avatar-btn text-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal" title="Редагувати профіль">
+                    <i class="bi bi-pencil-fill small"></i>
+                </button>
+            </div>
+            <div>
+                <h2 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h2>
+                <p class="mb-2 opacity-75">{{ user.profile.position|default:"Співробітник" }}</p>
+                <div>
+                    {% if user.is_staff %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-shield-check me-1"></i>Менеджер</span>
+                    {% else %}
+                        <span class="badge bg-light text-dark"><i class="bi bi-person-badge me-1"></i>Прораб</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        {# === MY WAREHOUSES === #}
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-geo-alt me-2 text-primary"></i>Мої об'єкти
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">Оберіть об'єкт, щоб зробити його активним робочим місцем.</p>
+
+                    <div class="d-flex flex-column gap-2">
+                        {% for wh in assigned_warehouses %}
+                        <div class="warehouse-item p-3 d-flex justify-content-between align-items-center {% if wh.id == active_wh_id %}active{% endif %}">
+                            <div>
+                                <div class="fw-bold text-dark">{{ wh.name }}</div>
+                                {% if wh.address %}
+                                    <small class="text-muted"><i class="bi bi-pin-map me-1"></i>{{ wh.address }}</small>
+                                {% endif %}
+                            </div>
+                            {% if wh.id == active_wh_id %}
+                                <span class="badge bg-success px-3 py-2">
+                                    <i class="bi bi-check-lg me-1"></i>Активний
+                                </span>
+                            {% else %}
+                                <a href="{% url 'switch_active_warehouse' wh.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-arrow-right-circle me-1"></i>Перейти
+                                </a>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-building-x fs-1 d-block mb-2 opacity-50"></i>
+                            <p class="mb-0">Вам не призначено жодного об'єкта</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# === PERSONAL INFO & STATS === #}
+        <div class="col-lg-5">
+            {# Personal Info #}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-person me-2 text-secondary"></i>Контактні дані
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">Телефон</label>
+                        <div class="fs-5 fw-bold">{{ user.profile.phone|default:"Не вказано" }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">Email</label>
+                        <div>{{ user.email|default:"Не вказано" }}</div>
+                    </div>
+                    <hr>
+                    <a href="{% url 'password_change' %}" class="btn btn-outline-danger w-100">
+                        <i class="bi bi-shield-lock me-2"></i>Змінити пароль
+                    </a>
+                </div>
+            </div>
+
+            {# Stats #}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-bar-chart me-2 text-info"></i>Моя статистика
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="stat-card bg-primary bg-opacity-10 p-3 rounded text-center">
+                                <div class="fs-3 fw-bold text-primary">{{ my_orders_count|default:"0" }}</div>
+                                <small class="text-muted">Заявок створено</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card bg-success bg-opacity-10 p-3 rounded text-center">
+                                <div class="fs-3 fw-bold text-success">{{ my_transactions_count|default:"0" }}</div>
+                                <small class="text-muted">Операцій</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# === EDIT PROFILE MODAL === #}
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-pencil-square me-2"></i>Редагувати профіль
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <h6 class="text-muted fw-bold mb-3">Основна інформація</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Ім'я</label>
+                            {{ u_form.first_name }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Прізвище</label>
+                            {{ u_form.last_name }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Email</label>
+                            {{ u_form.email }}
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h6 class="text-muted fw-bold mb-3">Додаткові дані</h6>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Телефон</label>
+                            {{ p_form.phone }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Посада</label>
+                            {{ p_form.position }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Фото профілю</label>
+                            {{ p_form.photo }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+                    <button type="submit" class="btn btn-primary fw-bold">
+                        <i class="bi bi-check-lg me-1"></i>Зберегти
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

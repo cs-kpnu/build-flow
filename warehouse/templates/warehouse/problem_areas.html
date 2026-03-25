@@ -1,0 +1,220 @@
+{% extends 'warehouse/base.html' %}
+
+{% block title %}Проблемні моменти{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4 fw-bold text-danger"><i class="bi bi-exclamation-octagon-fill me-2"></i> Проблемні моменти</h3>
+
+    <div class="row g-4">
+        
+        <!-- 1. ПРОТЕРМІНОВАНІ (Active) -->
+        <div class="col-lg-6">
+            <div class="card h-100 border-danger shadow-sm">
+                <div class="card-header bg-danger text-white fw-bold d-flex justify-content-between">
+                    <span>🔥 Протерміновані поставки (Active)</span>
+                    <span class="badge bg-white text-danger">{{ overdue|length }}</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Заявка / Об'єкт</th>
+                                <th>Матеріал</th>
+                                <th>Очікувалось</th>
+                                <th>Затримка</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in overdue %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'manager_order_detail' order.id %}" class="fw-bold text-decoration-none">#{{ order.id }}</a>
+                                    <div class="small text-muted"><i class="bi bi-building me-1"></i>{{ order.warehouse.name }}</div>
+                                </td>
+                                <td>
+                                    <!-- Канонічний вивід через items -->
+                                    {% for item in order.items.all|slice:":2" %}
+                                        <div class="text-truncate" style="max-width: 150px;" title="{{ item.material.name }}">
+                                            • {{ item.material.name }}
+                                        </div>
+                                    {% empty %}
+                                        <span class="text-muted small">-</span>
+                                    {% endfor %}
+                                    
+                                    {% if order.items.count > 2 %}
+                                        <small class="text-muted ps-2">+ ще {{ order.items.count|add:"-2" }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-danger fw-bold">
+                                    {{ order.expected_date|date:"d.m" }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-danger">
+                                        {{ order.expected_date|timesince:today }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted p-3">Протермінованих заявок немає. Супер!</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. ПЕРЕВИТРАТИ БЮДЖЕТУ (DRILL-DOWN) -->
+        <div class="col-lg-6">
+            <div class="card h-100 border-warning shadow-sm">
+                <div class="card-header bg-warning text-dark fw-bold d-flex justify-content-between">
+                    <span>💰 Перевищення бюджету</span>
+                    <span class="badge bg-dark text-warning">{{ critical_wh|length }}</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Об'єкт</th>
+                                <th class="text-end">Ліміт</th>
+                                <th class="text-end">Перевитрата</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in critical_wh %}
+                            <tr class="table-light">
+                                <td class="fw-bold">{{ item.name }}</td>
+                                <td class="text-end">{{ item.limit|floatformat:0 }}</td>
+                                <td class="text-end text-danger fw-bold">
+                                    +{{ item.overrun|floatformat:0 }} ₴<br>
+                                    <small class="text-muted">({{ item.percent }}%)</small>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}">
+                                        <i class="bi bi-chevron-down"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" class="p-0 border-0">
+                                    <div class="collapse bg-white p-3 border-bottom" id="collapse{{ forloop.counter }}">
+                                        <h6 class="small text-muted fw-bold mb-2">ТОП-3 Витрати:</h6>
+                                        <ul class="list-group list-group-flush small">
+                                            {% for exp in item.top_expenses %}
+                                            <li class="list-group-item d-flex justify-content-between px-0 py-1">
+                                                <span>{{ exp.material__name }}</span>
+                                                <span class="text-danger fw-bold">{{ exp.total|floatformat:0 }} ₴</span>
+                                            </li>
+                                            {% empty %}
+                                                <li class="list-group-item text-muted">Деталі відсутні</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted p-3">Всі об'єкти в рамках бюджету.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. НЕДОСТАЧІ ПРИ ПРИЙОМІ -->
+        <div class="col-lg-6">
+            <div class="card h-100 border-secondary shadow-sm">
+                <div class="card-header bg-secondary text-white fw-bold">
+                    📉 Недостачі (Факт < План)
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Заявка</th>
+                                <th>Матеріали</th>
+                                <th class="text-center">Різниця</th>
+                                <th class="text-end">Сума збитку</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in shortages %}
+                            <tr>
+                                <td><a href="{% url 'manager_order_detail' item.order.id %}" class="text-dark">#{{ item.order.id }}</a></td>
+                                <td>
+                                    <!-- Безпечний вивід матеріалів (Канонічний) -->
+                                    {% for ord_item in item.order.items.all|slice:":2" %}
+                                        <div class="small text-truncate" style="max-width: 150px;" title="{{ ord_item.material.name }}">
+                                            • {{ ord_item.material.name }}
+                                        </div>
+                                    {% empty %}
+                                        <span class="small text-muted">-</span>
+                                    {% endfor %}
+                                    
+                                    {% if item.order.items.count > 2 %}
+                                        <small class="text-muted ps-2">+ ще {{ item.order.items.count|add:"-2" }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center text-danger fw-bold">
+                                    -{{ item.diff }}
+                                </td>
+                                <td class="text-end">{{ item.sum }} ₴</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted p-3">Недостач не зафіксовано.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. АНАЛІТИКА СПИСАНЬ (ВТРАТИ) -->
+        <div class="col-lg-6">
+            <div class="card h-100 border-dark shadow-sm">
+                <div class="card-header bg-dark text-white fw-bold">
+                    🗑️ Лідери по списанню (Бій/Втрата)
+                </div>
+                <div class="card-body">
+                    <h6 class="text-muted small text-uppercase mb-3">Топ об'єктів за сумою втрат:</h6>
+                    <ul class="list-group list-group-flush mb-4">
+                        {% for row in loss_by_wh %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <span class="fw-bold">{{ row.warehouse__name }}</span>
+                                <div class="small text-muted">{{ row.count }} випадків</div>
+                            </div>
+                            <span class="badge bg-danger rounded-pill">{{ row.total_loss_sum|floatformat:2 }} ₴</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-center text-muted">Втрат не зафіксовано</li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <hr>
+                    <h6 class="text-muted small text-uppercase mb-2">Останні інциденти:</h6>
+                    <div class="list-group">
+                        {% for t in recent_losses|slice:":3" %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 text-danger">{{ t.material.name }}</h6>
+                                <small>{{ t.created_at|date:"d.m" }}</small>
+                            </div>
+                            <p class="mb-1 small">
+                                <b>{{ t.quantity }} {{ t.material.unit }}</b> на {{ t.warehouse.name }}
+                            </p>
+                            <small class="text-muted">{{ t.description|default:"Без коментаря" }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'writeoff_report' %}?reason=LOSS" class="btn btn-sm btn-outline-dark">Всі списання</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

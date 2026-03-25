@@ -1,0 +1,653 @@
+{% extends 'warehouse/base.html' %}
+
+{% block title %}
+    {% if role == 'foreman' %}Кабінет Прораба{% else %}Дашборд{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* === ЗАГАЛЬНІ АНІМАЦІЇ === */
+    .hover-scale {
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .hover-scale:hover {
+        transform: scale(1.03);
+    }
+    .hover-lift {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    }
+
+    {% if role == 'foreman' %}
+    /* === СТИЛІ ДЛЯ ПРОРАБА (MOBILE-FIRST DARK MODE) === */
+    body {
+        background-color: #121212 !important;
+        color: #e0e0e0;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    /* Навігація */
+    .navbar {
+        background-color: #1f1f1f !important;
+        border-bottom: 1px solid #333;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Картки */
+    .card {
+        background-color: #1e1e1e;
+        border: 1px solid #333;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Кнопки швидких дій */
+    .action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100px;
+        border-radius: 20px;
+        text-decoration: none;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+        position: relative;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    }
+    .action-btn:active {
+        transform: scale(0.98);
+    }
+    .action-btn i {
+        font-size: 2.2rem;
+        margin-bottom: 8px;
+        z-index: 2;
+    }
+    .action-btn span {
+        z-index: 2;
+    }
+    .action-btn::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0));
+        z-index: 1;
+    }
+
+    /* Градієнти кнопок */
+    .bg-gradient-order { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000 !important; }
+    .bg-gradient-writeoff { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+    .bg-gradient-income { background: linear-gradient(135deg, #10b981, #047857); }
+    .bg-gradient-warehouse { background: linear-gradient(135deg, #6366f1, #4338ca); }
+    .bg-gradient-qr { background: linear-gradient(135deg, #0dcaf0, #0aa2c0); color: #000 !important; }
+
+    /* Список заявок */
+    .list-group-item {
+        background-color: #262626;
+        border: none;
+        border-bottom: 1px solid #333;
+        margin-bottom: 8px;
+        border-radius: 12px !important;
+        padding: 1rem;
+        transition: background-color 0.15s, transform 0.15s;
+    }
+    .list-group-item:hover {
+        background-color: #2d2d2d;
+        transform: translateX(4px);
+    }
+    .list-group-item:last-child { margin-bottom: 0; }
+
+    /* Бейджі */
+    .badge-soft {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Тексти */
+    .text-muted { color: #888 !important; }
+    h1, h2, h3, h4, h5, h6 { color: #fff; }
+
+    /* Меню (Sidebar) */
+    .offcanvas-dark {
+        background-color: #1f1f1f;
+        color: #fff;
+    }
+    .offcanvas-dark .btn-close {
+        filter: invert(1);
+    }
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        color: #e0e0e0;
+        text-decoration: none;
+        border-radius: 8px;
+        margin-bottom: 4px;
+        transition: background-color 0.2s, padding-left 0.2s;
+    }
+    .sidebar-link:hover, .sidebar-link.active {
+        background-color: #333;
+        color: #fff;
+        padding-left: 20px;
+    }
+    .sidebar-link i {
+        font-size: 1.2rem;
+        margin-right: 12px;
+        width: 24px;
+        text-align: center;
+    }
+
+    /* Стилі для QR сканера */
+    #reader {
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    #reader video {
+        object-fit: cover;
+        border-radius: 12px;
+    }
+
+    /* Статистична картка */
+    .stat-card {
+        background: linear-gradient(135deg, #1e1e1e 0%, #262626 100%);
+        border-radius: 16px;
+        border: 1px solid #333;
+    }
+
+    {% else %}
+    /* === СТИЛІ ДЛЯ МЕНЕДЖЕРА (LIGHT MODE) === */
+    .kpi-card {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+    }
+    .warehouse-card {
+        border: none;
+        border-radius: 16px;
+        transition: all 0.2s;
+        overflow: hidden;
+    }
+    .warehouse-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+        border-color: #0d6efd !important;
+    }
+    .warehouse-card .card-body {
+        position: relative;
+    }
+    .warehouse-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #0d6efd 0%, #6610f2 100%);
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .warehouse-card:hover::before {
+        opacity: 1;
+    }
+    {% endif %}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            {% if role == 'foreman' %}
+            <!-- Кнопка меню (Гамбургер) -->
+            <button class="btn btn-dark border-secondary me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#foremanSidebar">
+                <i class="bi bi-list fs-5"></i>
+            </button>
+            {% endif %}
+            
+            <div>
+                <h2 class="fw-bold mb-0 h3">
+                    {% if role == 'manager' %}
+                        💼 Панель Менеджера
+                    {% else %}
+                        👋 Привіт, {{ user.first_name|default:"Прораб" }}
+                    {% endif %}
+                </h2>
+                <p class="text-muted small mb-0">{{ now|date:"l, d E" }}</p>
+            </div>
+        </div>
+        
+        {% if role == 'foreman' %}
+        <form method="get" action="{% url 'profile' %}">
+            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 d-flex align-items-center gap-2 text-light border-secondary" type="submit" style="background: rgba(255,255,255,0.05);">
+                <i class="bi bi-geo-alt-fill text-warning"></i>
+                <span class="d-none d-sm-inline">Об'єкт:</span>
+                <span class="fw-bold text-white">{{ active_warehouse.name|default:"Оберіть склад" }}</span>
+            </button>
+        </form>
+        {% else %}
+        <a href="{% url 'manager_dashboard' %}" class="btn btn-primary shadow-sm">
+            <i class="bi bi-speedometer2 me-2"></i> Детальний дашборд
+        </a>
+        {% endif %}
+    </div>
+
+    {% if role == 'foreman' %}
+    <!-- ==================== SIDEBAR (OFFCANVAS) ==================== -->
+    <div class="offcanvas offcanvas-start offcanvas-dark" tabindex="-1" id="foremanSidebar">
+        <div class="offcanvas-header border-bottom border-secondary">
+            <h5 class="offcanvas-title fw-bold"><i class="bi bi-tools me-2 text-warning"></i>Меню Прораба</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body p-0 pt-3">
+            <div class="list-group list-group-flush bg-transparent">
+                <a href="{% url 'index' %}" class="sidebar-link active">
+                    <i class="bi bi-speedometer2 text-primary"></i> Головна
+                </a>
+                <a href="{% url 'foreman_storage' %}" class="sidebar-link">
+                    <i class="bi bi-boxes text-info"></i> Мій Склад
+                </a>
+                <div class="my-2 border-top border-secondary mx-3"></div>
+                <a href="{% url 'create_order' %}" class="sidebar-link">
+                    <i class="bi bi-cart-plus text-warning"></i> Створити заявку
+                </a>
+                <a href="{% url 'add_transaction' %}" class="sidebar-link">
+                    <i class="bi bi-box-arrow-right text-danger"></i> Списати матеріал
+                </a>
+                <a href="{% url 'add_transaction' %}?type=IN" class="sidebar-link">
+                    <i class="bi bi-box-arrow-in-down text-success"></i> Прийняти поставку
+                </a>
+                <div class="my-2 border-top border-secondary mx-3"></div>
+                <a href="{% url 'writeoff_history' %}" class="sidebar-link">
+                    <i class="bi bi-clock-history"></i> Історія списань
+                </a>
+                <a href="{% url 'delivery_history' %}" class="sidebar-link">
+                    <i class="bi bi-truck"></i> Історія надходжень
+                </a>
+                <div class="mt-auto p-3">
+                    <a href="{% url 'profile' %}" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-person-circle me-2"></i> Профіль
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== МОДАЛЬНЕ ВІКНО QR СКАНЕРА ==================== -->
+    <div class="modal fade" id="qrScannerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="bi bi-qr-code-scan me-2"></i>Сканування QR</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-0">
+                    <div id="reader" style="width: 100%;"></div>
+                    <p class="text-muted mt-3 small px-3">Наведіть камеру на QR-код матеріалу або накладної</p>
+                </div>
+                <div class="modal-footer border-secondary justify-content-center">
+                    <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Скасувати</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================== ІНТЕРФЕЙС ПРОРАБА (MODERN) ==================== -->
+    
+    <!-- 1. ШВИДКІ ДІЇ -->
+    <div class="row g-2 mb-4">
+        <!-- 1-й ряд (основні) -->
+        <div class="col-6 col-md-3">
+            <a href="{% url 'create_order' %}" class="action-btn bg-gradient-order hover-scale">
+                <i class="bi bi-cart-plus-fill text-dark"></i>
+                <span class="text-dark">Замовити</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'add_transaction' %}" class="action-btn bg-gradient-writeoff hover-scale">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Списати</span>
+            </a>
+        </div>
+        
+        <!-- 2-й ряд (прийом і склад) -->
+        <div class="col-6 col-md-3">
+            <a href="{% url 'add_transaction' %}?type=IN" class="action-btn bg-gradient-income hover-scale">
+                <i class="bi bi-box-arrow-in-down"></i>
+                <span>Прийняти</span>
+            </a>
+        </div>
+        <!-- Кнопка QR Сканера -->
+        <div class="col-6 col-md-3">
+             <button type="button" class="action-btn bg-gradient-qr hover-scale w-100" data-bs-toggle="modal" data-bs-target="#qrScannerModal" id="startScanBtn">
+                <i class="bi bi-qr-code-scan text-dark"></i>
+                <span class="text-dark">Скан QR</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. ГОЛОВНА КАРТКА (БАЛАНС) -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <a href="{% url 'foreman_storage' %}" class="text-decoration-none">
+                <div class="card h-100 bg-dark position-relative overflow-hidden border-0 hover-scale">
+                    <!-- Декоративний фон -->
+                    <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
+                    
+                    <div class="card-body p-4 position-relative">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="text-muted text-uppercase small fw-bold mb-1">Баланс об'єкту</h6>
+                                <h2 class="display-5 fw-bold text-white mb-0">{{ total_value|default:"0" }} <small class="fs-5 text-muted">₴</small></h2>
+                            </div>
+                            <div class="p-3 rounded-circle bg-white bg-opacity-10 text-success">
+                                <i class="bi bi-wallet2 fs-3"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-4 mt-4 pt-3 border-top border-secondary">
+                            <div>
+                                <div class="fs-4 fw-bold text-white">{{ orders.count|default:"0" }}</div>
+                                <div class="small text-muted">Активних заявок</div>
+                            </div>
+                            <div>
+                                <div class="fs-4 fw-bold text-white">{{ items_count|default:"0" }}</div>
+                                <div class="small text-muted">Позицій на складі</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 3. СПИСОК АКТИВНИХ ЗАЯВОК -->
+        <div class="col-lg-6">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0 text-white"><i class="bi bi-activity me-2 text-primary"></i>В роботі</h5>
+                <a href="{% url 'order_list' %}" class="btn btn-sm btn-link text-decoration-none text-primary">Всі заявки</a>
+            </div>
+
+            <div class="list-group">
+                {% for order in orders|slice:":5" %}
+                <a href="{% url 'foreman_order_detail' order.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge badge-soft rounded-pill">#{{ order.id }}</span>
+                            <span class="small text-muted">{{ order.created_at|date:"d.m" }}</span>
+                        </div>
+                        <span class="badge 
+                            {% if order.status == 'new' %}bg-warning text-dark
+                            {% elif order.status == 'approved' %}bg-info text-dark
+                            {% elif order.status == 'purchasing' %}bg-primary
+                            {% elif order.status == 'transit' %}bg-secondary
+                            {% elif order.status == 'completed' %}bg-success
+                            {% else %}bg-dark border border-secondary{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-end">
+                        <div>
+                            <h6 class="mb-1 text-white text-truncate" style="max-width: 250px;">
+                                {% if order.items.first %}
+                                    {{ order.items.first.material.name }}
+                                {% else %}
+                                    <span class="text-muted fst-italic">Без товарів</span>
+                                {% endif %}
+                            </h6>
+                            <small class="text-muted">
+                                {% if order.items.count > 1 %}
+                                    + ще {{ order.items.count|add:"-1" }} позицій
+                                {% else %}
+                                    {{ order.items.first.quantity|default:"-" }} {{ order.items.first.material.unit }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        {% if order.priority == 'high' %}
+                            <span class="text-danger small fw-bold bg-danger bg-opacity-10 px-2 py-1 rounded">
+                                <i class="bi bi-fire me-1"></i>Терміново
+                            </span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% empty %}
+                <div class="text-center py-5 bg-dark rounded border border-secondary border-dashed">
+                    <i class="bi bi-clipboard-x display-4 text-muted opacity-50 mb-3"></i>
+                    <p class="text-muted">Заявок поки немає</p>
+                    <a href="{% url 'create_order' %}" class="btn btn-outline-warning btn-sm">Створити першу</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Data (Hidden) -->
+    {% if chart_labels %}
+    {{ chart_labels|json_script:"chart-labels-json" }}
+    {{ chart_data|json_script:"chart-data-json" }}
+    {% endif %}
+
+    {% else %}
+    <!-- ==================== ІНТЕРФЕЙС МЕНЕДЖЕРА (STANDARD) ==================== -->
+
+    <div class="row g-4 mb-4">
+        <!-- KPI Cards -->
+        <div class="col-md-4">
+            <div class="card kpi-card shadow-sm h-100 border-0 position-relative overflow-hidden">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-uppercase text-muted small fw-bold mb-2">Нові заявки</div>
+                            <h2 class="mb-0 fw-bold text-primary display-6">{{ new_orders_count|default:"0" }}</h2>
+                            <small class="text-muted">Потребують обробки</small>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-3">
+                            <i class="bi bi-file-earmark-plus fs-2"></i>
+                        </div>
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 w-100" style="height: 4px; background: linear-gradient(90deg, #0d6efd 0%, #6610f2 100%);"></div>
+                </div>
+                <a href="{% url 'manager_dashboard' %}?status=new" class="stretched-link"></a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card kpi-card shadow-sm h-100 border-0 position-relative overflow-hidden">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-uppercase text-muted small fw-bold mb-2">В дорозі</div>
+                            <h2 class="mb-0 fw-bold text-warning display-6">{{ transit_orders_count|default:"0" }}</h2>
+                            <small class="text-muted">Очікують доставки</small>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-3">
+                            <i class="bi bi-truck fs-2"></i>
+                        </div>
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 w-100" style="height: 4px; background: linear-gradient(90deg, #ffc107 0%, #fd7e14 100%);"></div>
+                </div>
+                <a href="{% url 'logistics_dashboard' %}" class="stretched-link"></a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card kpi-card shadow-sm h-100 border-0 position-relative overflow-hidden">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-uppercase text-muted small fw-bold mb-2">Аналітика</div>
+                            <h2 class="mb-0 fw-bold text-success display-6">Звіти</h2>
+                            <small class="text-muted">Переглянути дані</small>
+                        </div>
+                        <div class="bg-success bg-opacity-10 text-success rounded-3 p-3">
+                            <i class="bi bi-graph-up-arrow fs-2"></i>
+                        </div>
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 w-100" style="height: 4px; background: linear-gradient(90deg, #198754 0%, #20c997 100%);"></div>
+                </div>
+                <a href="{% url 'reports_dashboard' %}" class="stretched-link"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 fw-bold text-dark">
+            <i class="bi bi-building me-2 text-primary"></i>Об'єкти будівництва
+        </h5>
+        <a href="{% url 'objects_comparison' %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-bar-chart-steps me-1"></i>Порівняти
+        </a>
+    </div>
+
+    {% if not warehouses %}
+        <div class="alert alert-info shadow-sm border-0 rounded-3">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                <div>
+                    <strong>Об'єкти відсутні</strong>
+                    <div class="small">Ви поки що не закріплені за жодним складом або об'єктом.</div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="row g-4">
+            {% for wh in warehouses %}
+            <div class="col-md-6 col-lg-4">
+                <a href="{% url 'warehouse_detail' wh.pk %}" class="text-decoration-none">
+                    <div class="card warehouse-card h-100 shadow-sm border">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title fw-bold text-dark mb-1">{{ wh.name }}</h5>
+                                    <p class="card-text text-muted small mb-0">
+                                        <i class="bi bi-geo-alt me-1"></i>{{ wh.address|default:"Адреса не вказана" }}
+                                    </p>
+                                </div>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill px-3 py-2">
+                                    {{ wh.budget_limit|floatformat:0 }} ₴
+                                </span>
+                            </div>
+                            <div class="d-flex align-items-center pt-3 border-top">
+                                <div class="rounded-circle bg-gradient text-white d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px; font-size: 14px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                                    {% if wh.responsible_user %}
+                                        {{ wh.responsible_user.username|slice:":1"|upper }}
+                                    {% else %}
+                                        <i class="bi bi-person"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="small">
+                                    <span class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Відповідальний</span>
+                                    <span class="fw-bold text-dark">
+                                        {{ wh.responsible_user.get_full_name|default:"Не призначено" }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+
+{% if role == 'foreman' %}
+<!-- Підключення бібліотеки QR-сканера -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // --- CHARTS ---
+        const ctx = document.getElementById('warehouseChart');
+        if (ctx) {
+            let chartData = [], chartLabels = [];
+            try {
+                chartData = JSON.parse(document.getElementById('chart-data-json').textContent);
+                chartLabels = JSON.parse(document.getElementById('chart-labels-json').textContent);
+            } catch (e) { console.error("Error parsing chart data", e); }
+
+            if (chartData.length > 0) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: 'Вартість (грн)',
+                            data: chartData,
+                            backgroundColor: ['#f59e0b', '#3b82f6', '#ef4444', '#10b981', '#8b5cf6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        // --- QR SCANNER LOGIC ---
+        const scanBtn = document.getElementById('startScanBtn');
+        const modalEl = document.getElementById('qrScannerModal');
+        let html5QrcodeScanner = null;
+
+        if (scanBtn && modalEl) {
+            modalEl.addEventListener('shown.bs.modal', function () {
+                html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+                
+                html5QrcodeScanner.render((decodedText, decodedResult) => {
+                    console.log(`Scan result: ${decodedText}`);
+                    
+                    // Зупиняємо сканер
+                    html5QrcodeScanner.clear().then(() => {
+                        // Логіка обробки:
+                        // 1. Якщо це URL нашого сайту -> переходимо
+                        if (decodedText.includes(window.location.origin)) {
+                            window.location.href = decodedText;
+                        } 
+                        // 2. Інакше вважаємо, що це артикул/код матеріалу -> переходимо на прийом (IN)
+                        else {
+                            // Формуємо URL для створення транзакції IN з передзаповненим матеріалом (потрібна підтримка в add_transaction)
+                            // Для прикладу: передаємо сканований текст як search query
+                            const url = `{% url 'add_transaction' %}?type=IN&search=${encodeURIComponent(decodedText)}`;
+                            window.location.href = url;
+                        }
+                    });
+                    
+                    // Закриваємо модалку
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+                    
+                }, (errorMessage) => {
+                    // console.log(errorMessage); // Ігноруємо помилки сканування кожного кадру
+                });
+            });
+
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                if (html5QrcodeScanner) {
+                    html5QrcodeScanner.clear().catch(error => console.error("Failed to clear scanner", error));
+                }
+            });
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends 'warehouse/base.html' %}
+
+{% block title %}Звіт про списання{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border: none;
+        border-radius: 12px;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    .table-container {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .writeoff-table thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f8f9fa;
+    }
+    .writeoff-row {
+        transition: background-color 0.15s;
+    }
+    .writeoff-row:hover {
+        background-color: #f8f9fa;
+    }
+    .writeoff-row.loss {
+        background-color: #fff5f5;
+    }
+    .type-badge {
+        font-size: 0.75rem;
+        padding: 0.35em 0.65em;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    {# === HEADER === #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h4 fw-bold text-dark mb-1">
+                <i class="bi bi-journal-minus me-2 text-danger"></i>Списання матеріалів
+            </h1>
+            <p class="text-muted small mb-0">Витрати на роботи та непередбачені втрати</p>
+        </div>
+        <div class="d-flex gap-2 no-print">
+            <a href="?export=excel{% if f_date_from %}&date_from={{ f_date_from }}{% endif %}{% if f_date_to %}&date_to={{ f_date_to }}{% endif %}" class="btn btn-success" title="Експорт в Excel">
+                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-dark">
+                <i class="bi bi-printer me-1"></i>Друк
+            </button>
+        </div>
+    </div>
+
+    {# === STATS CARDS === #}
+    <div class="row g-3 mb-4 no-print">
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm h-100 border-start border-4 border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-bold">Витрачено на роботи</div>
+                            <div class="fs-3 fw-bold text-dark">{{ stats.work_sum|floatformat:0 }} ₴</div>
+                            <small class="text-muted"><i class="bi bi-hammer me-1"></i>Будівельні роботи</small>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-3">
+                            <i class="bi bi-tools fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm h-100 border-start border-4 border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-bold">Втрати / Бій</div>
+                            <div class="fs-3 fw-bold text-danger">{{ stats.loss_sum|floatformat:0 }} ₴</div>
+                            <small class="text-muted"><i class="bi bi-exclamation-triangle me-1"></i>Непередбачені витрати</small>
+                        </div>
+                        <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-3">
+                            <i class="bi bi-trash3 fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm h-100 border-start border-4 border-secondary">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase fw-bold mb-2">Фільтр по періоду</div>
+                    <form method="get" class="d-flex gap-2">
+                        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from|default:'' }}" placeholder="З">
+                        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to|default:'' }}" placeholder="По">
+                        <button type="submit" class="btn btn-sm btn-dark px-3">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# === TABLE === #}
+    <div class="card shadow-sm border-0 table-container">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-list-ul me-2 text-secondary"></i>Журнал списань
+            </h5>
+            <span class="badge bg-primary rounded-pill">{{ report_data|length }} записів</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 writeoff-table">
+                <thead>
+                    <tr class="text-muted small text-uppercase">
+                        <th class="ps-3 fw-semibold">Дата</th>
+                        <th class="fw-semibold">Об'єкт</th>
+                        <th class="fw-semibold">Матеріал</th>
+                        <th class="text-end fw-semibold">Кількість</th>
+                        <th class="fw-semibold">Тип</th>
+                        <th class="fw-semibold">Хто списав</th>
+                        <th class="fw-semibold">Причина</th>
+                        <th class="text-center pe-3 fw-semibold">Фото</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_data %}
+                    <tr class="writeoff-row {% if row.type == 'LOSS' %}loss{% endif %}">
+                        <td class="ps-3 text-nowrap">
+                            <div class="text-dark">{{ row.date|date:"d.m.Y" }}</div>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-dark">{{ row.warehouse }}</span>
+                        </td>
+                        <td>
+                            <div class="text-dark">{{ row.material }}</div>
+                            <small class="text-success fw-bold">{{ row.sum|floatformat:2 }} ₴</small>
+                        </td>
+                        <td class="text-end">
+                            <span class="fs-5 fw-bold text-dark">{{ row.quantity|floatformat:2 }}</span>
+                            <small class="text-muted ms-1">{{ row.unit }}</small>
+                        </td>
+                        <td>
+                            {% if row.type == 'OUT' %}
+                                <span class="badge bg-warning text-dark type-badge">
+                                    <i class="bi bi-hammer me-1"></i>Роботи
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger type-badge">
+                                    <i class="bi bi-x-circle me-1"></i>Втрата
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
+                                    <i class="bi bi-person-fill small"></i>
+                                </div>
+                                <span class="small">{{ row.author }}</span>
+                            </div>
+                        </td>
+                        <td class="text-muted small" style="max-width: 200px;">
+                            {{ row.reason|default:"—"|truncatechars:50 }}
+                        </td>
+                        <td class="text-center pe-3">
+                            {% if row.photo %}
+                                <a href="{{ row.photo }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Переглянути фото">
+                                    <i class="bi bi-image"></i>
+                                </a>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-journal-x fs-1 d-block mb-2 opacity-50"></i>
+                                <p class="mb-0 fw-bold">Списань не знайдено</p>
+                                <small>Змініть параметри фільтру</small>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

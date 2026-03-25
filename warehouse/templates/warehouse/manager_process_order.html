@@ -1,0 +1,29 @@
+{% extends 'warehouse/base.html' %}
+
+{% block title %}Обробка заявки #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center" style="max-width: 600px;">
+    <div class="card shadow-sm border-0 p-5">
+        <div class="mb-4 text-primary">
+            <i class="bi bi-info-circle fs-1"></i>
+        </div>
+        <h3 class="fw-bold mb-3">Сторінка переміщена</h3>
+        <p class="text-muted mb-4">
+            Функціонал обробки заявок оновлено.<br>
+            Будь ласка, перейдіть до сторінки деталей заявки для погодження або редагування.
+        </p>
+        
+        <a href="{% url 'manager_order_detail' order.id %}" class="btn btn-primary btn-lg">
+            Перейти до заявки #{{ order.id }}
+        </a>
+        
+        <script>
+            // Автоматичний редірект через 1 секунду для зручності
+            setTimeout(function() {
+                window.location.href = "{% url 'manager_order_detail' order.id %}";
+            }, 1000);
+        </script>
+    </div>
+</div>
+{% endblock %}

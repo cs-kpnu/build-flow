@@ -1,0 +1,98 @@
+{% extends 'warehouse/base.html' %}
+{% load static %}
+
+{% block title %}Аналітика логістики{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4 fw-bold"><i class="bi bi-graph-up-arrow me-2"></i> Аналітика переміщень</h3>
+
+    <!-- ФІЛЬТРИ -->
+    <form method="get" class="card shadow-sm mb-4 border-0 bg-light no-print">
+        <div class="card-body row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="small fw-bold text-muted">Період з</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from|default:'' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="small fw-bold text-muted">по</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to|default:'' }}">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-arrow-repeat me-1"></i> Оновити</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- KPI КАРТКИ -->
+    <div class="row g-3 mb-4">
+        <!-- Всього переміщень -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-info">
+                <div class="card-body">
+                    <div class="text-uppercase small text-muted fw-bold mb-1">Всього рейсів</div>
+                    <div class="fs-2 fw-bold text-dark">{{ total_transfers }}</div>
+                    <small class="text-muted">За обраний період</small>
+                </div>
+            </div>
+        </div>
+        <!-- Інші KPI можна додати тут -->
+    </div>
+
+    <div class="row g-4">
+        
+        <!-- ГРАФІК 1: ТОП МАТЕРІАЛІВ -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 fw-bold">
+                    📦 Що найчастіше возять?
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="matChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ГРАФІК 2: ПОПУЛЯРНІ МАРШРУТИ (Звідки) -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 fw-bold">
+                    🚚 Активність складів-відправників
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="routeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- JSON DATA FOR CHARTS -->
+<!-- Використовуємо json_script для безпечної передачі даних -->
+{{ mat_labels|json_script:"mat-labels" }}
+{{ mat_data|json_script:"mat-data" }}
+{{ route_labels|json_script:"route-labels" }}
+{{ route_data|json_script:"route-data" }}
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Підключаємо локальний Chart.js (vendor) -->
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+
+<!-- Логіка графіків -->
+<script src="{% static 'warehouse/js/transfer_charts.js' %}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.TransferCharts) {
+            window.TransferCharts.init();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends 'warehouse/base.html' %}
+{% load static %}
+
+{% block title %}План закупівель{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+    }
+    .table-container {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .plan-table thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f8f9fa;
+    }
+    .plan-row {
+        transition: background-color 0.15s;
+    }
+    .plan-row:hover {
+        background-color: #f8f9fa;
+    }
+    .plan-row.critical {
+        background-color: #fff5f5;
+    }
+    .plan-row.high {
+        background-color: #fffbeb;
+    }
+    .time-badge {
+        font-size: 0.7rem;
+        padding: 0.2em 0.5em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    {# === HEADER === #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h4 fw-bold text-dark mb-1">
+                <i class="bi bi-calendar-check me-2 text-primary"></i>План закупівель
+            </h1>
+            <p class="text-muted small mb-0">Очікувані поставки та терміни виконання</p>
+        </div>
+        <div class="d-flex gap-2 no-print">
+            {% if report_data %}
+            <a href="?export=excel{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if f_priority %}&priority={{ f_priority }}{% endif %}" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+            </a>
+            {% endif %}
+            <button onclick="window.print()" class="btn btn-outline-dark">
+                <i class="bi bi-printer me-1"></i>Друк
+            </button>
+        </div>
+    </div>
+
+    {# === FILTERS === #}
+    <div class="card filter-card shadow-sm mb-4 border-0 no-print">
+        <div class="card-body py-3">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">Дата потреби з</label>
+                    <input type="date" name="date_from" class="form-control" value="{{ date_from|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">по</label>
+                    <input type="date" name="date_to" class="form-control" value="{{ date_to|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">Пріоритет</label>
+                    <select name="priority" class="form-select">
+                        <option value="">Всі</option>
+                        <option value="critical" {% if f_priority == 'critical' %}selected{% endif %}>Критичний</option>
+                        <option value="high" {% if f_priority == 'high' %}selected{% endif %}>Високий</option>
+                        <option value="normal" {% if f_priority == 'normal' %}selected{% endif %}>Звичайний</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-filter me-1"></i>Показати
+                        </button>
+                        <a href="{% url 'planning_report' %}" class="btn btn-outline-secondary" title="Скинути">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# === TABLE === #}
+    <div class="card shadow-sm border-0 table-container">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-list-check me-2 text-secondary"></i>Заплановані закупівлі
+            </h5>
+            <span class="badge bg-primary rounded-pill">{{ report_data|length }} записів</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 plan-table">
+                <thead>
+                    <tr class="text-muted small text-uppercase">
+                        <th class="ps-3 fw-semibold">Дата потреби</th>
+                        <th class="fw-semibold">Заявка</th>
+                        <th class="fw-semibold">Об'єкт</th>
+                        <th class="fw-semibold">Пріоритет</th>
+                        <th class="fw-semibold">Відповідальний</th>
+                        <th class="text-center fw-semibold">Статус</th>
+                        <th class="text-end pe-3 fw-semibold">Дії</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_data %}
+                    <tr class="plan-row {% if row.order.priority == 'critical' %}critical{% elif row.order.priority == 'high' %}high{% endif %}">
+                        <td class="ps-3">
+                            <div class="fw-bold text-dark">{{ row.date_needed|date:"d.m.Y" }}</div>
+                            <span class="badge bg-light text-muted border time-badge">
+                                <i class="bi bi-clock me-1"></i>{{ row.date_needed|timeuntil }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-primary">#{{ row.order.id }}</span>
+                            {% if row.order.note %}
+                                <i class="bi bi-chat-left-text text-muted ms-1" data-bs-toggle="tooltip" title="{{ row.order.note }}"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <i class="bi bi-geo-alt text-danger me-1"></i>{{ row.order.warehouse.name }}
+                        </td>
+                        <td>
+                            {% if row.order.priority == 'critical' %}
+                                <span class="badge bg-danger"><i class="bi bi-fire me-1"></i>Критичний</span>
+                            {% elif row.order.priority == 'high' %}
+                                <span class="badge bg-warning text-dark">Високий</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">{{ row.order.get_priority_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
+                                    <i class="bi bi-person-fill small"></i>
+                                </div>
+                                <span class="small">{{ row.responsible }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ row.status_color }} bg-opacity-10 text-{{ row.status_color }} border border-{{ row.status_color }}">
+                                {{ row.status_label }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-3">
+                            <a href="{% url 'manager_order_detail' row.order.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-calendar-x fs-1 d-block mb-2 opacity-50"></i>
+                                <p class="mb-0 fw-bold">Немає запланованих закупівель</p>
+                                <small>Змініть параметри фільтру або створіть нову заявку</small>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize Bootstrap tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

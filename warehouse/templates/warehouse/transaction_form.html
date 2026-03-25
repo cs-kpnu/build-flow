@@ -1,0 +1,167 @@
+{% extends 'warehouse/base.html' %}
+{% load static %}
+
+{% block title %}Акт списання / Роботи{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Стиль для великих перемикачів */
+    .btn-check:checked + .btn-outline-warning {
+        background-color: #ffc107; color: #000; font-weight: bold; border-color: #ffc107;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .btn-check:checked + .btn-outline-danger {
+        background-color: #dc3545; color: #fff; font-weight: bold; border-color: #dc3545;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .btn-check:checked + .btn-outline-success {
+        background-color: #198754; color: #fff; font-weight: bold; border-color: #198754;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    /* Блок етапів (Прихований за замовчуванням) */
+    #construction-details {
+        background-color: #f8f9fa;
+        border-left: 5px solid #0d6efd;
+        display: none; /* JS покаже це за потреби */
+        transition: all 0.3s ease;
+    }
+    .form-label { font-weight: 600; color: #555; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5" style="max-width: 800px;">
+    
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-white pt-4 pb-0 border-0">
+            <h3 class="fw-bold mb-1">📝 Нова операція</h3>
+            <p class="text-muted small">Списання матеріалів на роботи або фіксація втрат</p>
+        </div>
+        
+        <div class="card-body p-4">
+            
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Перевірте правильність заповнення форми.
+                    {{ form.errors }}
+                </div>
+            {% endif %}
+
+            <!-- 
+                data-stock-validate: активує stock_ajax.js
+                data-hint-target: селектор для виводу залишку
+                data-stages-url: URL для завантаження етапів (transaction_form.js)
+            -->
+            <form method="post" enctype="multipart/form-data" id="transactionForm" 
+                  data-stock-validate 
+                  data-hint-target="#stock-hint"
+                  data-stages-url="{% url 'ajax_load_stages' %}">
+                {% csrf_token %}
+                
+                <!-- 1. ТИП ТРАНЗАКЦІЇ (RADIO BUTTONS) -->
+                <div class="mb-4 text-center">
+                    <label class="form-label d-block text-start mb-2">Що робимо?</label>
+                    <div class="btn-group w-100" role="group">
+                        
+                        <input type="radio" class="btn-check" name="transaction_type" id="type_out" value="OUT" checked>
+                        <label class="btn btn-outline-warning py-3" for="type_out">
+                            <i class="bi bi-hammer fs-4 d-block mb-1"></i>
+                            На роботи
+                        </label>
+
+                        <input type="radio" class="btn-check" name="transaction_type" id="type_loss" value="LOSS">
+                        <label class="btn btn-outline-danger py-3" for="type_loss">
+                            <i class="bi bi-trash3 fs-4 d-block mb-1"></i>
+                            Списання (Бій)
+                        </label>
+                        
+                        <!-- Опція "Прихід" прихована для звичайних користувачів -->
+                        {% if user.is_staff or user.is_superuser %}
+                        <input type="radio" class="btn-check" name="transaction_type" id="type_in" value="IN">
+                        <label class="btn btn-outline-success py-3" for="type_in">
+                            <i class="bi bi-box-seam fs-4 d-block mb-1"></i>
+                            Прихід (Кор.)
+                        </label>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 2. ОСНОВНІ ДАНІ -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Склад / Об'єкт</label>
+                        {{ form.warehouse }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Дата операції</label>
+                        <input type="date" name="date" class="form-control" value="{% now 'Y-m-d' %}">
+                    </div>
+                </div>
+
+                <!-- 3. ДЕТАЛІ БУДІВНИЦТВА (Тільки для OUT) -->
+                <div id="construction-details" class="p-3 mb-4 rounded">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-bricks me-2"></i> Деталі робіт</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Етап будівництва</label>
+                        <!-- Цей селект буде заповнюватись через JS (AJAX) -->
+                        <select name="stage" id="id_stage" class="form-select">
+                            <option value="">---------</option>
+                        </select>
+                        <div class="form-text">Оберіть етап, щоб списання врахувалось у план-факт.</div>
+                    </div>
+                </div>
+
+                <!-- 4. МАТЕРІАЛ -->
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Матеріал</label>
+                            <!-- TomSelect буде підключено автоматично через клас .tom-select -->
+                            {{ form.material }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <label class="form-label">Кількість</label>
+                                {{ form.quantity }}
+                            </div>
+                            <div class="col-6 d-flex align-items-end">
+                                <!-- Місце для підказки залишку (наповнюється через stock_ajax.js) -->
+                                <div id="stock-hint" class="form-text text-muted w-100 ps-2" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. ДОДАТКОВО -->
+                <div class="mb-3">
+                    <label class="form-label">Коментар / Призначення</label>
+                    {{ form.description }}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Фото підтвердження</label>
+                    {{ form.photo }}
+                </div>
+
+                <!-- КНОПКИ -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg shadow">
+                        <i class="bi bi-check-lg me-2"></i> Провести операцію
+                    </button>
+                    <a href="javascript:history.back()" class="btn btn-light text-muted">Скасувати</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Підключаємо логіку перевірки залишків -->
+<script src="{% static 'warehouse/js/stock_ajax.js' %}"></script>
+<!-- Підключаємо логіку форми транзакцій (етапи, перемикачі) -->
+<script src="{% static 'warehouse/js/transaction_form.js' %}"></script>
+{% endblock %}
