@@ -11,19 +11,12 @@ from django.db import connection
 
 def health_check(request):
     """Health check endpoint for load balancers and monitoring."""
-    health = {'status': 'healthy', 'database': 'ok'}
-    status_code = 200
-
-    # Перевірка з'єднання з БД
     try:
         with connection.cursor() as cursor:
             cursor.execute('SELECT 1')
-    except Exception as e:
-        health['database'] = 'error'
-        health['status'] = 'unhealthy'
-        status_code = 503
-
-    return JsonResponse(health, status=status_code)
+        return JsonResponse({'status': 'ok'}, status=200)
+    except Exception:
+        return JsonResponse({'status': 'error'}, status=503)
 
 
 urlpatterns = [

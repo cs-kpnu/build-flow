@@ -1,9 +1,8 @@
 import uuid
 from decimal import Decimal, ROUND_HALF_UP
 from django.db import models
-from django.utils.functional import cached_property
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from django.db.models import Sum, F, DecimalField, ExpressionWrapper, Q
 from django.db.models.signals import post_save, post_delete
@@ -58,7 +57,7 @@ class Supplier(models.Model):
     phone = models.CharField("Телефон", max_length=20, blank=True)
     email = models.EmailField("Email", blank=True)
     address = models.TextField("Адреса", blank=True)
-    rating = models.IntegerField("Рейтинг надійності (0-100)", default=100, validators=[MinValueValidator(0)])
+    rating = models.IntegerField("Рейтинг надійності (0-100)", default=100, validators=[MinValueValidator(0), MaxValueValidator(100)])
 
     class Meta:
         verbose_name = "Постачальник"
@@ -96,7 +95,7 @@ class Material(models.Model):
     def __str__(self):
         return f"{self.name} ({self.unit})"
 
-    @cached_property
+    @property
     def total_stock(self):
         """
         Загальний залишок матеріалу по всіх складах.
@@ -178,6 +177,7 @@ class StageLimit(models.Model):
     class Meta:
         verbose_name = "Ліміт матеріалу"
         verbose_name_plural = "Ліміти матеріалів (Кошторис)"
+        unique_together = [('stage', 'material')]
 
 
 class Order(models.Model):

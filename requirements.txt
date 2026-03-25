@@ -1,7 +1,7 @@
-Django>=5.0
-psycopg2-binary
-Pillow
-openpyxl
-python-dotenv
-whitenoise
-gunicorn
+Django>=5.0,<6.0
+psycopg2-binary>=2.9,<3.0
+Pillow>=10.0,<12.0
+openpyxl>=3.1,<4.0
+python-dotenv>=1.0,<2.0
+whitenoise>=6.0,<7.0
+gunicorn>=21.0,<24.0

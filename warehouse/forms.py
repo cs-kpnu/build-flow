@@ -39,7 +39,7 @@ def validate_file_size(file):
 
 
 def validate_image_file(file):
-    """Валідатор для зображень (розмір + тип)."""
+    """Валідатор для зображень (розмір + розширення + реальний вміст через Pillow)."""
     if file:
         validate_file_size(file)
         # Перевірка розширення
@@ -48,6 +48,15 @@ def validate_image_file(file):
             raise ValidationError(
                 f"Недозволений тип файлу. Дозволені: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}"
             )
+        # Перевірка реального вмісту файлу через Pillow (захист від rename-атак)
+        try:
+            from PIL import Image
+            file.seek(0)
+            img = Image.open(file)
+            img.verify()
+            file.seek(0)
+        except Exception:
+            raise ValidationError("Файл не є дійсним зображенням або має пошкоджений вміст.")
 
 # ==============================================================================
 # 1. ФОРМИ ТРАНЗАКЦІЙ (INVENTORY MOVEMENT)
@@ -145,6 +154,7 @@ class OrderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        self._form_user = user  # зберігаємо для clean_warehouse
         super().__init__(*args, **kwargs)
 
         # Для прораба (не staff) - обмежуємо тільки його складами
@@ -154,6 +164,15 @@ class OrderForm(forms.ModelForm):
             else:
                 # Якщо у прораба немає призначених складів - порожній список
                 self.fields['warehouse'].queryset = Warehouse.objects.none()
+
+    def clean_warehouse(self):
+        """Явна перевірка доступу до складу (захист від IDOR через підміну POST-параметра)."""
+        warehouse = self.cleaned_data.get('warehouse')
+        user = self._form_user
+        if user and not user.is_staff and warehouse:
+            if not hasattr(user, 'profile') or not user.profile.warehouses.filter(pk=warehouse.pk).exists():
+                raise ValidationError("У вас немає доступу до цього складу.")
+        return warehouse
 
     def clean_request_photo(self):
         """Валідація фото/документа заявки."""

@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.db import transaction
@@ -25,7 +26,7 @@ def foreman_order_detail(request, pk):
     
     # Перевірка прав (автор або доступ до складу)
     if order.created_by != request.user and not check_access(request.user, order.warehouse):
-        return HttpResponse("⛔ Немає доступу", status=403)
+        raise PermissionDenied("У вас немає доступу до цієї заявки.")
 
     # Додавання коментаря (чат)
     if request.method == 'POST' and 'comment_text' in request.POST:

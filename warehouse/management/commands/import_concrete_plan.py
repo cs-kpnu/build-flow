@@ -34,13 +34,12 @@ class Command(BaseCommand):
         for stage_raw_name, limits in plan_data.items():
             # Створюємо етап в БД
             stage, created = ConstructionStage.objects.get_or_create(name=stage_raw_name, warehouse=warehouse)
-            
+
             for c_type, qty in limits.items():
-                # Створюємо ліміт (План)
+                # Створюємо ліміт (План) — construct_type видалено з моделі
                 StageLimit.objects.update_or_create(
                     stage=stage,
                     material=concrete,
-                    construct_type=c_type,
                     defaults={'planned_quantity': qty}
                 )
                 self.stdout.write(f"  ✅ {stage_raw_name} [{c_type}]: План {qty} м3")

@@ -19,7 +19,7 @@ from ..forms import OrderForm, OrderItemFormSet
 from ..services import inventory
 from ..services.inventory import InsufficientStockError
 from .utils import log_audit, check_access
-from ..decorators import rate_limit
+from ..decorators import rate_limit, staff_required
 
 # ==============================================================================
 # СПИСОК ЗАЯВОК (ORDER LIST)
@@ -241,14 +241,11 @@ def delete_order(request, pk):
 # ЛОГІСТИКА
 # ==============================================================================
 
-@login_required
+@staff_required
 def logistics_monitor(request):
     """
     Монітор логіста: заявки в статусі 'purchasing' (треба везти) та 'transit' (їдуть).
     """
-    if not request.user.is_staff:
-        return redirect('index')
-        
     purchasing_orders = Order.objects.filter(status='purchasing').order_by('expected_date')
     transit_orders = Order.objects.filter(status='transit').order_by('expected_date')
     
@@ -257,14 +254,11 @@ def logistics_monitor(request):
         'transit_orders': transit_orders
     })
 
-@login_required
+@staff_required
 def mark_order_shipped(request, pk):
     """
     Логіст позначає, що товар виїхав (status -> transit).
     """
-    if not request.user.is_staff:
-        return redirect('index')
-        
     order = get_object_or_404(Order, pk=pk)
     
     if request.method == 'POST':
@@ -298,11 +292,14 @@ def confirm_receipt(request, pk):
          
     if request.method == 'POST':
         # Отримуємо дані з форми (фактична кількість по кожному товару)
+        # Перевіряємо, що item_id належить саме цій заявці (захист від IDOR)
+        valid_item_ids = set(str(i) for i in order.items.values_list('id', flat=True))
         items_data = {}
         for key, value in request.POST.items():
             if key.startswith('item_qty_'):
                 item_id = key.split('_')[-1]
-                items_data[item_id] = value
+                if item_id in valid_item_ids:
+                    items_data[item_id] = value
                 
         proof_photo = request.FILES.get('proof_photo')
         comment = request.POST.get('comment', '')

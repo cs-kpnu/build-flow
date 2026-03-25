@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Sum, F, DecimalField, Count, Q, Case, When, Value, Avg, ExpressionWrapper
 from django.db.models.functions import TruncMonth, TruncDay
@@ -13,6 +14,24 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from decimal import Decimal, ROUND_HALF_UP
 
 from ..models import Transaction, Order, OrderItem, Warehouse, Material, Supplier, AuditLog
+from ..decorators import staff_required
+
+
+def _parse_date(value):
+    """Безпечно парсить рядок дати з GET-параметра. Повертає None при помилці."""
+    if not value:
+        return None
+    try:
+        return datetime.date.fromisoformat(str(value).strip())
+    except (ValueError, TypeError):
+        return None
+
+
+def _sanitize_cell(value):
+    """Запобігає Excel formula injection (= + - @ на початку рядка)."""
+    if isinstance(value, str) and value and value[0] in ('=', '+', '-', '@', '\t', '\r'):
+        return "'" + value
+    return value
 
 
 # ==============================================================================
@@ -57,7 +76,7 @@ def create_excel_response(headers, data_rows, filename, sheet_title="Report"):
     # Data rows
     for row_idx, row_data in enumerate(data_rows, start=2):
         for col_idx, value in enumerate(row_data, start=1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=value)
+            cell = ws.cell(row=row_idx, column=col_idx, value=_sanitize_cell(value))
             cell.border = border
             # Вирівнювання чисел праворуч
             if isinstance(value, (int, float, Decimal)):
@@ -99,16 +118,13 @@ from .utils import (
 # ГОЛОВНИЙ ДАШБОРД АНАЛІТИКИ
 # ==============================================================================
 
-@login_required
+@staff_required
 def reports_dashboard(request):
     """
     Головна сторінка розділу "Звіти".
     Відображає загальні KPI та графіки витрат.
     ВИКЛЮЧАЄ трансфери з розрахунку витрачених грошей.
     """
-    if not request.user.is_staff: 
-        return redirect('index')
-    
     # Вираз для безпечного множення Float * Decimal
     spent_expr = ExpressionWrapper(
         F('quantity') * F('price'),
@@ -162,7 +178,7 @@ def reports_dashboard(request):
 # ЗВІТ ПРО СПИСАННЯ (WRITEOFF REPORT)
 # ==============================================================================
 
-@login_required
+@staff_required
 def writeoff_report(request):
     """
     Звіт по списаннях (Витрати на роботи vs Втрати).
@@ -173,11 +189,11 @@ def writeoff_report(request):
     qs = work_writeoffs_qs(qs.select_related('warehouse', 'material', 'created_by'))
     
     # Фільтрація
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
+    date_from = _parse_date(request.GET.get('date_from'))
+    date_to = _parse_date(request.GET.get('date_to'))
     reason = request.GET.get('reason') # OUT or LOSS
     wh_id = request.GET.get('warehouse')
-    
+
     if date_from: qs = qs.filter(date__gte=date_from)
     if date_to: qs = qs.filter(date__lte=date_to)
     if reason: qs = qs.filter(transaction_type=reason)
@@ -256,7 +272,7 @@ def writeoff_report(request):
 # ОБОРОТНА ВІДОМІСТЬ (PERIOD REPORT)
 # ==============================================================================
 
-@login_required
+@staff_required
 def period_report(request):
     """
     Класична оборотка:
@@ -366,7 +382,7 @@ def period_report(request):
 # ЗАЛИШКИ НА СКЛАДАХ (STOCK BALANCE)
 # ==============================================================================
 
-@login_required
+@staff_required
 def stock_balance_report(request):
     """
     Звіт по поточних залишках з можливістю експорту Excel.
@@ -478,32 +494,32 @@ def stock_balance_report(request):
 # ЖУРНАЛ ПЕРЕМІЩЕНЬ (TRANSFER JOURNAL)
 # ==============================================================================
 
-@login_required
+@staff_required
 def transfer_journal(request):
     """
     Журнал переміщень. 
     Групує IN/OUT транзакції по transfer_group_id.
     """
     # Фільтр дат
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-    
+    date_from = _parse_date(request.GET.get('date_from'))
+    date_to = _parse_date(request.GET.get('date_to'))
+
     # Фільтруємо транзакції по доступу (тільки склади юзера)
     qs = restrict_warehouses_qs(Transaction.objects.all(), request.user)
-    
+
     if date_from: qs = qs.filter(date__gte=date_from)
     if date_to: qs = qs.filter(date__lte=date_to)
-    
+
     # Використовуємо enrich_transfers для групування
     journal = enrich_transfers(qs)
-    
+
     return render(request, 'warehouse/transfer_journal.html', {
         'transfers': journal,
         'f_date_from': date_from,
         'f_date_to': date_to
     })
 
-@login_required
+@staff_required
 def transfer_analytics(request):
     """
     Аналітика переміщень (Графіки: що везуть, куди везуть).
@@ -516,11 +532,11 @@ def transfer_analytics(request):
         transfer_group_id__isnull=False
     )
     
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
+    date_from = _parse_date(request.GET.get('date_from'))
+    date_to = _parse_date(request.GET.get('date_to'))
     if date_from: qs = qs.filter(date__gte=date_from)
     if date_to: qs = qs.filter(date__lte=date_to)
-    
+
     # 1. Топ матеріалів (Pie)
     mat_stats = qs.values('material__name').annotate(c=Count('id')).order_by('-c')[:5]
     mat_labels = [x['material__name'] for x in mat_stats]
@@ -547,7 +563,7 @@ def transfer_analytics(request):
 # ІНШІ ЗВІТИ (SAVINGS, PROBLEMS, HISTORY, AUDIT)
 # ==============================================================================
 
-@login_required
+@staff_required
 def savings_report(request):
     """
     Звіт про економію. 
@@ -558,11 +574,11 @@ def savings_report(request):
     base_qs = restrict_warehouses_qs(Transaction.objects.all(), request.user)
     qs = base_qs.filter(transaction_type='IN', order__isnull=False)
     
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
+    date_from = _parse_date(request.GET.get('date_from'))
+    date_to = _parse_date(request.GET.get('date_to'))
     if date_from: qs = qs.filter(date__gte=date_from)
     if date_to: qs = qs.filter(date__lte=date_to)
-    
+
     data = []
     total_saved = Decimal("0.00")
     
@@ -593,7 +609,7 @@ def savings_report(request):
         'date_to': date_to
     })
 
-@login_required
+@staff_required
 def problem_areas(request):
     """
     Проблемні зони: Прострочені заявки та Втрати (LOSS).
@@ -617,7 +633,7 @@ def problem_areas(request):
         'recent_losses': losses
     })
 
-@login_required
+@staff_required
 def movement_history(request):
     """
     Загальна історія руху матеріалів.
@@ -626,10 +642,10 @@ def movement_history(request):
     qs = restrict_warehouses_qs(Transaction.objects.all(), request.user)
     qs = qs.select_related('warehouse', 'material', 'created_by').order_by('-date', '-created_at')
     
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
+    date_from = _parse_date(request.GET.get('date_from'))
+    date_to = _parse_date(request.GET.get('date_to'))
     mat_id = request.GET.get('material')
-    
+
     if date_from: qs = qs.filter(date__gte=date_from)
     if date_to: qs = qs.filter(date__lte=date_to)
     if mat_id: qs = qs.filter(material_id=mat_id)
@@ -643,7 +659,7 @@ def movement_history(request):
         'f_date_to': date_to
     })
 
-@login_required
+@staff_required
 def procurement_journal(request):
     """Журнал закупівель (на основі Orders)"""
     base_qs = restrict_warehouses_qs(Order.objects.all(), request.user)
@@ -652,7 +668,7 @@ def procurement_journal(request):
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'warehouse/procurement_journal.html', {'orders': page_obj})
 
-@login_required
+@staff_required
 def objects_comparison(request):
     """Порівняння бюджетів об'єктів"""
     # Тільки дозволені склади
@@ -679,10 +695,10 @@ def objects_comparison(request):
         
     return render(request, 'warehouse/objects_comparison.html', {'data': data})
 
-@login_required
+@staff_required
 def global_audit_log(request):
     if not request.user.is_superuser:
-        return redirect('index')
+        raise PermissionDenied("Тільки суперадміністратори можуть переглядати журнал аудиту.")
     
     logs = AuditLog.objects.all().select_related('user').order_by('-timestamp')
     
@@ -708,13 +724,13 @@ def global_audit_log(request):
 # ПЛАНУВАННЯ (PLANNING REPORT)
 # ==============================================================================
 
-@login_required
+@staff_required
 def planning_report(request):
     """
     Звіт: План закупівель (на основі активних заявок).
     """
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
+    date_from = _parse_date(request.GET.get('date_from'))
+    date_to = _parse_date(request.GET.get('date_to'))
     f_priority = request.GET.get('priority')
 
     # Вибираємо активні заявки (які ще не виконані і не відхилені)
@@ -779,13 +795,13 @@ def planning_report(request):
 # РЕЙТИНГ ПОСТАЧАЛЬНИКІВ (SUPPLIERS RATING)
 # ==============================================================================
 
-@login_required
+@staff_required
 def suppliers_rating(request):
     """
     Звіт: Рейтинг постачальників (на основі історії закупівель).
     """
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
+    date_from = _parse_date(request.GET.get('date_from'))
+    date_to = _parse_date(request.GET.get('date_to'))
 
     # Тут ми фільтруємо постачальників на основі доступних користувачу замовлень
     # Спочатку дістаємо всі доступні замовлення

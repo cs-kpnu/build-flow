@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.db import transaction
 from django.db.models import Sum, Q
 from django.utils import timezone
-from ..models import Transaction, Material, Warehouse, ConstructionStage
+from ..models import Transaction, Material, Warehouse, ConstructionStage, Order
 
 class InsufficientStockError(Exception):
     """
@@ -218,6 +218,11 @@ def process_order_receipt(order, items_data, user, proof_photo=None, comment="")
     import logging
     logger = logging.getLogger('warehouse')
 
+    # Блокуємо рядок заявки щоб уникнути дублювання при паралельних запитах
+    order = Order.objects.select_for_update().get(pk=order.pk)
+    if order.status == 'completed':
+        raise ValueError(f"Заявку #{order.pk} вже прийнято.")
+
     transfer_group_id = None
     if order.source_warehouse:
         transfer_group_id = uuid.uuid4()
@@ -229,10 +234,12 @@ def process_order_receipt(order, items_data, user, proof_photo=None, comment="")
         qty_raw = items_data.get(item.id) or items_data.get(str(item.id))
 
         if qty_raw is None:
+            logger.debug(f"process_order_receipt: позиція #{item.id} відсутня в items_data, пропускаємо")
             continue
 
         qty_dec = to_decimal(qty_raw, places=3)
         if qty_dec <= 0:
+            logger.debug(f"process_order_receipt: позиція #{item.id} має нульову кількість, пропускаємо")
             continue
 
         # Якщо це переміщення, перевіряємо залишки на джерелі
@@ -253,8 +260,12 @@ def process_order_receipt(order, items_data, user, proof_photo=None, comment="")
             'price_dec': price_dec,
         })
 
+    if not validated_items:
+        raise ValueError("Жодну позицію не прийнято. Перевірте введені кількості.")
+
     # === ФАЗА 2: Створення транзакцій (тільки якщо всі позиції валідні) ===
     created_transactions = []
+    materials_to_update_price = set()
 
     for vi in validated_items:
         item = vi['item']
@@ -297,7 +308,11 @@ def process_order_receipt(order, items_data, user, proof_photo=None, comment="")
             )
 
         if not order.source_warehouse and price_dec > 0:
-            item.material.update_material_avg_price()
+            materials_to_update_price.add(item.material)
+
+    # Оновлюємо середні ціни після циклу (один запит на матеріал, не N+1)
+    for material in materials_to_update_price:
+        material.update_material_avg_price()
 
     # === ФАЗА 3: Оновлення статусу заявки ===
     order.status = 'completed'

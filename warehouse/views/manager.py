@@ -1,6 +1,6 @@
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q, Sum, F, Case, When, DecimalField
+from django.db.models import Q, Sum, F, Case, When, DecimalField, Count
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -55,14 +55,14 @@ def dashboard(request):
     # Базовий QuerySet заявок з фільтрацією по дозволених складах
     base_orders = Order.objects.filter(warehouse__in=allowed_warehouses)
 
-    # KPI Статистика (тільки для дозволених складів)
-    orders_stat = {
-        'new': base_orders.filter(status='new').count(),
-        'approved': base_orders.filter(status='approved').count(),
-        'purchasing': base_orders.filter(status='purchasing').count(),
-        'transit': base_orders.filter(status='transit').count(),
-        'active_total': base_orders.exclude(status__in=['completed', 'rejected', 'draft']).count()
-    }
+    # KPI Статистика (один запит замість п'яти)
+    orders_stat = base_orders.aggregate(
+        new=Count('id', filter=Q(status='new')),
+        approved=Count('id', filter=Q(status='approved')),
+        purchasing=Count('id', filter=Q(status='purchasing')),
+        transit=Count('id', filter=Q(status='transit')),
+        active_total=Count('id', filter=~Q(status__in=['completed', 'rejected', 'draft']))
+    )
 
     # Фільтрація списку останніх заявок
     recent_orders = base_orders.select_related('warehouse', 'created_by').prefetch_related('items__material').order_by('-created_at')
@@ -74,8 +74,11 @@ def dashboard(request):
     # Ліміт 10 для дашборду
     recent_orders = recent_orders[:10]
 
-    # Матеріали з низьким запасом (для дозволених складів)
-    low_stock_materials = Material.objects.filter(min_limit__gt=0).order_by('-min_limit')[:5]
+    # Матеріали з низьким запасом (тільки по дозволених складах)
+    low_stock_materials = Material.objects.filter(
+        min_limit__gt=0,
+        transactions__warehouse__in=allowed_warehouses
+    ).distinct().order_by('-min_limit')[:5]
 
     context = {
         'stats': orders_stat,
@@ -148,14 +151,16 @@ def order_detail(request, pk):
     enforce_warehouse_access_or_404(request.user, order.warehouse)
 
     if request.method == 'POST' and 'add_comment' in request.POST:
-        form = OrderCommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
+        comment_form = OrderCommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
             comment.order = order
             comment.author = request.user
             comment.save()
             messages.success(request, "Коментар додано!")
-            return redirect('manager_order_detail', pk=pk) 
+            return redirect('manager_order_detail', pk=pk)
+        else:
+            messages.error(request, "Помилка: перевірте текст коментаря.")
     else:
         comment_form = OrderCommentForm()
 
@@ -400,9 +405,13 @@ def split_order(request, pk):
     
     if request.method == 'POST':
         with transaction.atomic():
+            # Ре-фетч із блокуванням щоб уникнути паралельного split тієї ж заявки
+            original_order = Order.objects.select_for_update().get(pk=pk)
+            items = original_order.items.select_related('material').all()
+
             new_orders_map = {}
             moved_count = 0
-            
+
             for item in items:
                 group_key = request.POST.get(f'item_{item.id}')
                 

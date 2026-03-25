@@ -6,9 +6,13 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.views.decorators.http import require_POST, require_GET
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from decimal import Decimal, ROUND_HALF_UP
+import logging
+
+logger = logging.getLogger('warehouse')
 
 from ..models import Order, UserProfile, Warehouse, ConstructionStage, Material, Transaction
 from ..forms import UserUpdateForm, ProfileUpdateForm
@@ -159,7 +163,10 @@ def switch_active_warehouse(request, pk):
     else:
         messages.error(request, "⛔ У вас немає доступу до цього складу.")
         
-    return redirect(request.META.get('HTTP_REFERER', 'index'))
+    referer = request.META.get('HTTP_REFERER', '')
+    if referer and url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}):
+        return redirect(referer)
+    return redirect('index')
 
 
 # ==============================================================================
@@ -264,8 +271,8 @@ def load_stages(request):
             if check_access(request.user, wh_id_int):
                 qs = ConstructionStage.objects.filter(warehouse_id=wh_id_int).order_by('name')
                 stages = list(qs.values('id', 'name'))
-        except (ValueError, TypeError):
-            pass
+        except (ValueError, TypeError) as e:
+            logger.debug(f"load_stages: некоректний warehouse_id {warehouse_id!r}: {e}")
             
     return JsonResponse(stages, safe=False)
 

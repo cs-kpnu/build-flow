@@ -24,15 +24,15 @@ class Command(BaseCommand):
             
             # 2. Додаємо ліміти (щоб система знала, що тут потрібен бетон)
             StageLimit.objects.get_or_create(
-                stage=stage_1, 
-                material=concrete, 
-                defaults={'construct_type': 'horizontal', 'planned_quantity': 100}
+                stage=stage_1,
+                material=concrete,
+                defaults={'planned_quantity': 100}
             )
-            
+
             StageLimit.objects.get_or_create(
-                stage=stage_2, 
-                material=concrete, 
-                defaults={'construct_type': 'vertical', 'planned_quantity': 50}
+                stage=stage_2,
+                material=concrete,
+                defaults={'planned_quantity': 50}
             )
 
         self.stdout.write(self.style.SUCCESS(f"✅ Готово! Етапи додано до {warehouses.count()} складів."))

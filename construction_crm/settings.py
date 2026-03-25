@@ -49,7 +49,17 @@ if DJANGO_ENV == 'production':
         raise ValueError("DJANGO_SECRET_KEY is required in production!")
 else:
     # Fallback for dev only
-    SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-dev-key-change-me')
+    _dev_key = os.getenv('DJANGO_SECRET_KEY')
+    if not _dev_key:
+        import secrets as _secrets
+        import warnings as _warnings
+        _dev_key = _secrets.token_urlsafe(50)
+        _warnings.warn(
+            "DJANGO_SECRET_KEY не задано. Використовується випадковий ключ. "
+            "Не підходить для multi-server або production деплою!",
+            stacklevel=2
+        )
+    SECRET_KEY = _dev_key
 
 # --- SECURITY WARNING: don't run with debug turned on in production! ---
 if DJANGO_ENV == 'production':
@@ -292,6 +302,11 @@ if DJANGO_ENV == 'production':
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
+    # Security headers
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
 
 # --- LOGGING ---
 
@@ -361,5 +376,7 @@ LOGGING = {
     },
 }
 
-# Створюємо директорію для логів, якщо не існує
+# Створюємо директорії, якщо не існують
 (BASE_DIR / 'logs').mkdir(exist_ok=True)
+(BASE_DIR / 'media').mkdir(exist_ok=True)
+(BASE_DIR / 'staticfiles').mkdir(exist_ok=True)

@@ -26,12 +26,12 @@ urlpatterns = [
     path('ajax/check_duplicates/', orders.check_order_duplicates, name='check_order_duplicates'),
     path('ajax/load-stages/', general.load_stages, name='ajax_load_stages'),
     
-    # (A) Ajax Warehouse Stock: Legacy path з новим іменем
+    # (A) Ajax Warehouse Stock: Legacy path (query param ?warehouse_id=...)
     path('ajax/warehouse-stock/', ajax_warehouse_stock, name='ajax_warehouse_stock_legacy'),
-    # (A) Ajax Warehouse Stock: Canonical path
+    # (A) Ajax Warehouse Stock: Canonical REST path (/ajax/warehouse/123/stock/)
     path('ajax/warehouse/<int:warehouse_id>/stock/', ajax_warehouse_stock, name='ajax_warehouse_stock'),
-    # Allow reversing 'ajax_warehouse_stock' without arguments (aliases to legacy) for templates using query params
-    path('ajax/warehouse/stock/', ajax_warehouse_stock, name='ajax_warehouse_stock'),
+    # (A) Ajax Warehouse Stock: Canonical no-arg path (query param variant)
+    path('ajax/warehouse/stock/', ajax_warehouse_stock, name='ajax_warehouse_stock_qs'),
 
     # AJAX API для матеріалів
     path('ajax/materials/', ajax_materials, name='ajax_materials'),
