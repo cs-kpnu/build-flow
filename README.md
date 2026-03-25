@@ -111,8 +111,8 @@ BuildFlow ERP автоматизує матеріальний облік на б
 
 ```bash
 # 1. Клонування репозиторію
-git clone https://github.com/andre20122002/construction-crm.git
-cd construction-crm
+git clone https://github.com/cs-kpnu/build-flow.git
+cd build-flow
 
 # 2. Віртуальне оточення
 python -m venv venv
@@ -450,6 +450,6 @@ python manage.py test --verbosity=2
 
 <div align="center">
 
-**Author:** Andrij Danilchuk &nbsp;·&nbsp; [GitHub]https://github.com/cs-kpnu/build-flow)
+**Author:** Andrii Danylchuk &nbsp;·&nbsp; [GitHub](https://github.com/cs-kpnu/build-flow)
 
 </div>
