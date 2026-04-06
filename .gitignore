@@ -40,3 +40,4 @@ Thumbs.db
 htmlcov/
 .pytest_cache/
 .claude/settings.local.json
+image.png

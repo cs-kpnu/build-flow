@@ -388,7 +388,7 @@
             </div>
 
             <div class="list-group">
-                {% for order in orders|slice:":5" %}
+                {% for order in my_orders|slice:":5" %}
                 <a href="{% url 'foreman_order_detail' order.id %}" class="list-group-item list-group-item-action">
                     <div class="d-flex w-100 justify-content-between align-items-center mb-2">
                         <div class="d-flex align-items-center gap-2">

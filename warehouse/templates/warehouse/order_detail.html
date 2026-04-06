@@ -14,9 +14,14 @@
                 </h2>
                 <div class="btn-group">
                     {% if order.status == 'new' and user.is_staff %}
-                        <form method="post" action="{% url 'manager_process_order' order.id %}" style="display:inline;">
+                        <a href="{% url 'order_approve' order.id %}" class="btn btn-success"><i class="bi bi-check-lg"></i> Погодити</a>
+                        <a href="{% url 'order_reject' order.id %}" class="btn btn-danger"><i class="bi bi-x-lg"></i> Відхилити</a>
+                    {% endif %}
+                    {% if order.status == 'approved' and user.is_staff %}
+                        <a href="{% url 'split_order' order.id %}" class="btn btn-outline-primary"><i class="bi bi-scissors me-1"></i> Розділити / Постачальник</a>
+                        <form method="post" action="{% url 'order_to_purchasing' order.id %}" style="display:inline;">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> Погодити</button>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-cart-check me-1"></i> Передати в закупівлю</button>
                         </form>
                     {% endif %}
                     <a href="{% url 'print_order_pdf' order.id %}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-printer"></i> Друк</a>

@@ -315,6 +315,38 @@ def order_reject(request, pk):
 
 
 @staff_required
+def order_to_purchasing(request, pk):
+    """
+    Передача погодженої заявки в закупівлю (approved → purchasing).
+    """
+    order = get_object_or_404(Order, pk=pk)
+    enforce_warehouse_access_or_404(request.user, order.warehouse)
+
+    if request.method == 'POST':
+        if order.status != 'approved':
+            messages.error(request, "Заявку можна передати в закупівлю лише зі статусу 'Погоджено'.")
+            return redirect('manager_order_detail', pk=pk)
+
+        order.status = 'purchasing'
+        order.save()
+
+        OrderComment.objects.create(
+            order=order,
+            author=request.user,
+            text="🛒 Заявку передано в закупівлю."
+        )
+
+        messages.success(request, f"Заявку #{order.id} передано в закупівлю!")
+        return redirect('manager_order_detail', pk=pk)
+
+    return render(request, 'warehouse/order_confirm_action.html', {
+        'order': order,
+        'action': 'purchasing',
+        'title': 'Передати в закупівлю?'
+    })
+
+
+@staff_required
 def material_list(request):
     """
     Довідник матеріалів.
@@ -468,11 +500,22 @@ def split_order(request, pk):
                 
             return redirect('manager_dashboard')
 
+    # Для кожного item готуємо: постачальники з ціною та без
+    all_supplier_ids = set(suppliers_map.keys())
+    items_with_suppliers = []
+    for item in items:
+        prices = SupplierPrice.objects.filter(material=item.material).select_related('supplier').order_by('price')
+        priced_ids = {sp.supplier_id for sp in prices}
+        other_suppliers = [s for sid, s in suppliers_map.items() if sid not in priced_ids]
+        items_with_suppliers.append({
+            'item': item,
+            'priced': prices,          # постачальники з ціною
+            'others': other_suppliers, # постачальники без ціни
+        })
+
     return render(request, 'warehouse/split_order.html', {
-        'order': original_order, 
-        'items': items, 
-        'suppliers': suppliers,
-        'suppliers_map': suppliers_map
+        'order': original_order,
+        'items_with_suppliers': items_with_suppliers,
     })
 
 

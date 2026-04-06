@@ -9,6 +9,9 @@
             {% if action == 'approve' %}
                 <div class="display-1 text-success mb-3"><i class="bi bi-check-circle"></i></div>
                 <h3 class="fw-bold">Погодити заявку #{{ order.id }}?</h3>
+            {% elif action == 'purchasing' %}
+                <div class="display-1 text-primary mb-3"><i class="bi bi-cart-check"></i></div>
+                <h3 class="fw-bold">Передати в закупівлю #{{ order.id }}?</h3>
             {% else %}
                 <div class="display-1 text-danger mb-3"><i class="bi bi-x-circle"></i></div>
                 <h3 class="fw-bold">Відхилити заявку #{{ order.id }}?</h3>
@@ -18,11 +21,13 @@
         <div class="card-body px-5">
             <p class="text-center text-muted mb-4">
                 Ви збираєтесь змінити статус заявки на 
-                <span class="badge {% if action == 'approve' %}bg-success{% else %}bg-danger{% endif %} fs-6">
-                    {% if action == 'approve' %}Approved (Погоджено){% else %}Rejected (Відхилено){% endif %}
+                <span class="badge {% if action == 'approve' %}bg-success{% elif action == 'purchasing' %}bg-primary{% else %}bg-danger{% endif %} fs-6">
+                    {% if action == 'approve' %}Погоджено{% elif action == 'purchasing' %}У закупівлі{% else %}Відхилено{% endif %}
                 </span>.
                 {% if action == 'approve' %}
-                    Це означає, що матеріали будуть передані на закупівлю.
+                    Заявку буде погоджено та передано менеджеру.
+                {% elif action == 'purchasing' %}
+                    Заявку буде передано в закупівлю для виконання.
                 {% else %}
                     Заявка буде закрита без виконання.
                 {% endif %}
@@ -39,8 +44,8 @@
                 {% endif %}
 
                 <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-lg {% if action == 'approve' %}btn-success{% else %}btn-danger{% endif %} shadow-sm">
-                        {% if action == 'approve' %}Так, погодити{% else %}Так, відхилити{% endif %}
+                    <button type="submit" class="btn btn-lg {% if action == 'approve' %}btn-success{% elif action == 'purchasing' %}btn-primary{% else %}btn-danger{% endif %} shadow-sm">
+                        {% if action == 'approve' %}Так, погодити{% elif action == 'purchasing' %}Так, передати в закупівлю{% else %}Так, відхилити{% endif %}
                     </button>
                     <a href="{% url 'manager_order_detail' order.id %}" class="btn btn-light text-muted">Скасувати</a>
                 </div>

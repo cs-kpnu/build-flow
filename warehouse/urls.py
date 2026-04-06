@@ -52,6 +52,9 @@ urlpatterns = [
     
     # Обробка заявки (погодження/відхилення)
     path('manager/order/<int:pk>/process/', manager.manager_process_order, name='manager_process_order'),
+    path('manager/order/<int:pk>/approve/', manager.order_approve, name='order_approve'),
+    path('manager/order/<int:pk>/reject/', manager.order_reject, name='order_reject'),
+    path('manager/order/<int:pk>/to-purchasing/', manager.order_to_purchasing, name='order_to_purchasing'),
     
     # Split Order (Розділення заявки)
     path('manager/order/<int:pk>/split/', manager.split_order, name='split_order'),

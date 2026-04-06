@@ -2,48 +2,281 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Вхід у систему</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BudSklad — Вхід</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .login-card { width: 100%; max-width: 400px; padding: 20px; border-radius: 10px; }
+        * { box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1a5276 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+        }
+
+        .brand-name {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+            margin: 0;
+        }
+
+        .brand-sub {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.55);
+            margin-top: 0.2rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.97);
+            box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+            backdrop-filter: blur(10px);
+        }
+
+        .card-body {
+            padding: 2.2rem 2rem;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-subtitle {
+            font-size: 0.82rem;
+            color: #94a3b8;
+            margin-bottom: 1.75rem;
+        }
+
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.4rem;
+        }
+
+        .input-group-text {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-right: none;
+            color: #94a3b8;
+        }
+
+        .form-control {
+            border: 1.5px solid #e2e8f0;
+            border-left: none;
+            background: #f8fafc;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.95rem;
+            border-radius: 0 10px 10px 0;
+            transition: all 0.2s;
+        }
+
+        .input-group .input-group-text {
+            border-radius: 10px 0 0 10px;
+        }
+
+        .form-control:focus {
+            background: #fff;
+            border-color: #2563eb;
+            box-shadow: none;
+        }
+
+        .form-control:focus + .input-group-text,
+        .input-group:focus-within .input-group-text {
+            border-color: #2563eb;
+            background: #fff;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border: none;
+            border-radius: 12px;
+            padding: 0.8rem;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            color: #fff;
+            width: 100%;
+            margin-top: 0.5rem;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+            transition: all 0.2s;
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+            color: #fff;
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .toggle-password {
+            cursor: pointer;
+            border: 1.5px solid #e2e8f0;
+            border-left: none;
+            background: #f8fafc;
+            border-radius: 0 10px 10px 0 !important;
+            color: #94a3b8;
+            padding: 0 0.75rem;
+            transition: color 0.2s;
+        }
+
+        .toggle-password:hover { color: #2563eb; }
+
+        .alert-danger {
+            border-radius: 10px;
+            font-size: 0.88rem;
+            border: none;
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 0.7rem 1rem;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.35);
+        }
+
+        /* Mobile */
+        @media (max-width: 480px) {
+            body { padding: 0; align-items: flex-start; background: #fff; }
+            .login-wrapper { max-width: 100%; }
+            .brand { padding-top: 3rem; background: linear-gradient(135deg, #0f172a, #1e3a5f); padding-bottom: 2rem; margin-bottom: 0; }
+            .card { border-radius: 24px 24px 0 0; margin-top: -16px; box-shadow: none; min-height: calc(100vh - 180px); }
+            .card-body { padding: 2rem 1.5rem; }
+        }
     </style>
 </head>
 <body>
 
-<div class="card shadow login-card">
-    <div class="card-body">
-        <h3 class="text-center mb-4">🏗️ БудСклад</h3>
-        <h5 class="text-center text-muted mb-4">Вхід для співробітників</h5>
+<div class="login-wrapper">
+    <div class="brand">
+        <div class="brand-icon">
+            <svg width="38" height="38" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Mast vertical -->
+                <rect x="17" y="10" width="4" height="24" rx="2" fill="white"/>
+                <!-- Jib horizontal (long arm right) -->
+                <rect x="17" y="10" width="18" height="3.5" rx="1.75" fill="white"/>
+                <!-- Counter-jib (short arm left) -->
+                <rect x="7" y="10" width="10" height="3.5" rx="1.75" fill="white" fill-opacity="0.7"/>
+                <!-- Trolley on jib -->
+                <rect x="28" y="13.5" width="4" height="2.5" rx="1" fill="rgba(255,255,255,0.5)"/>
+                <!-- Cable from trolley -->
+                <line x1="30" y1="16" x2="30" y2="24" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                <!-- Hook -->
+                <path d="M28 24 Q28 27 30.5 27 Q33 27 33 24.5" stroke="white" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                <!-- Base / ground line -->
+                <rect x="13" y="34" width="12" height="3" rx="1.5" fill="white" fill-opacity="0.6"/>
+                <!-- Counterweight box -->
+                <rect x="7" y="13.5" width="5" height="4" rx="1.2" fill="white" fill-opacity="0.4"/>
+            </svg>
+        </div>
+        <h1 class="brand-name">BudSklad</h1>
+        <p class="brand-sub">Система управління будівництвом</p>
+    </div>
 
-        <form method="post">
-            {% csrf_token %}
-            
+    <div class="card">
+        <div class="card-body">
+            <p class="card-title">Вхід до системи</p>
+            <p class="card-subtitle">Введіть ваші облікові дані</p>
+
             {% if form.errors %}
-                <div class="alert alert-danger text-center">
-                    Невірний логін або пароль
-                </div>
+            <div class="alert alert-danger d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                Невірний логін або пароль. Спробуйте ще раз.
+            </div>
             {% endif %}
 
-            <div class="mb-3">
-                <label class="form-label">Логін</label>
-                <input type="text" name="username" class="form-control" required autofocus>
-            </div>
+            <form method="post" autocomplete="on">
+                {% csrf_token %}
 
-            <div class="mb-3">
-                <label class="form-label">Пароль</label>
-                <input type="password" name="password" class="form-control" required>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label">Логін</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" name="username" class="form-control"
+                               placeholder="Введіть логін" required autofocus autocomplete="username">
+                    </div>
+                </div>
 
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary btn-lg">Увійти</button>
-            </div>
-        </form>
+                <div class="mb-3">
+                    <label class="form-label">Пароль</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" name="password" id="passwordInput"
+                               class="form-control" placeholder="••••••••"
+                               required autocomplete="current-password"
+                               style="border-radius: 0; border-right: none;">
+                        <button type="button" class="btn toggle-password" onclick="togglePassword()" tabindex="-1">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-login">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Увійти
+                </button>
+            </form>
+        </div>
     </div>
-    <div class="card-footer text-center text-muted mt-3 bg-white border-0">
-        Система управління логістикою
-    </div>
+
+    <p class="footer-text">© 2026 BudSklad · Всі права захищено</p>
 </div>
 
+<script>
+    function togglePassword() {
+        const input = document.getElementById('passwordInput');
+        const icon = document.getElementById('eyeIcon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye';
+        }
+    }
+</script>
 </body>
 </html>

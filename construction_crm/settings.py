@@ -92,6 +92,7 @@ CSRF_TRUSTED_ORIGINS = parse_csv(os.getenv('CSRF_TRUSTED_ORIGINS', 'http://127.0
 # --- APP CONFIGURATION ---
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -130,6 +131,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'warehouse.context_processors.sidebar_warehouses',
             ],
         },
     },
@@ -380,3 +382,93 @@ LOGGING = {
 (BASE_DIR / 'logs').mkdir(exist_ok=True)
 (BASE_DIR / 'media').mkdir(exist_ok=True)
 (BASE_DIR / 'staticfiles').mkdir(exist_ok=True)
+
+
+# --- JAZZMIN (Admin UI) ---
+
+JAZZMIN_SETTINGS = {
+    "site_title": "BudSklad Admin",
+    "site_header": "BudSklad",
+    "site_brand": "BudSklad ERP",
+    "site_logo": None,
+    "site_icon": None,
+    "welcome_sign": "Панель адміністратора",
+    "copyright": "BudSklad ERP © 2026",
+    "search_model": ["warehouse.Order", "warehouse.Material", "auth.User"],
+
+    "topmenu_links": [
+        {"name": "Головна", "url": "admin:index"},
+        {"name": "Відкрити сайт", "url": "/", "new_window": True},
+        {"model": "warehouse.Order"},
+    ],
+
+    "usermenu_links": [
+        {"name": "Профіль", "url": "/profile/", "new_window": False},
+    ],
+
+    "show_sidebar": True,
+    "navigation_expanded": True,
+
+    "icons": {
+        "auth":                     "fas fa-users-cog",
+        "auth.user":                "fas fa-user",
+        "auth.Group":               "fas fa-users",
+        "warehouse.Order":          "fas fa-clipboard-list",
+        "warehouse.Material":       "fas fa-boxes",
+        "warehouse.Warehouse":      "fas fa-building",
+        "warehouse.Supplier":       "fas fa-truck",
+        "warehouse.Transaction":    "fas fa-exchange-alt",
+        "warehouse.Category":       "fas fa-tags",
+        "warehouse.AuditLog":       "fas fa-history",
+        "warehouse.UserProfile":    "fas fa-id-card",
+        "warehouse.ConstructionStage": "fas fa-hard-hat",
+        "warehouse.StageLimit":     "fas fa-ruler",
+        "warehouse.SupplierPrice":  "fas fa-dollar-sign",
+        "warehouse.OrderComment":   "fas fa-comments",
+        "warehouse.OrderItem":      "fas fa-list",
+    },
+
+    "default_icon_parents": "fas fa-folder",
+    "default_icon_children": "fas fa-circle",
+
+    "related_modal_active": True,
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": False,
+    "show_ui_builder": False,
+
+    "changeform_format": "horizontal_tabs",
+    "language_chooser": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-primary",
+    "accent": "accent-primary",
+    "navbar": "navbar-dark",
+    "no_navbar_border": True,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
+    },
+}
