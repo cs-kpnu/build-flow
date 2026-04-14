@@ -2,6 +2,7 @@ from django.db.models import Sum, Case, When, F, DecimalField, Value, Q
 from django.http import Http404, JsonResponse
 from django.contrib.auth.decorators import login_required
 from ..models import Transaction, Warehouse, Material, AuditLog, UserProfile
+from ..services.cache_utils import get_user_warehouse_ids, get_materials_for_select
 import json
 from decimal import Decimal
 
@@ -12,21 +13,12 @@ from decimal import Decimal
 def get_allowed_warehouses(user):
     """
     Повертає QuerySet складів, до яких користувач має доступ.
-    - Superuser/Staff: Всі склади.
-    - Інші: Тільки ті, до яких надано доступ (через user.profile.warehouses).
+    Результат IDs беруться з кешу (cache_utils.get_user_warehouse_ids).
     """
-    if not user.is_authenticated:
+    ids = get_user_warehouse_ids(user)
+    if not ids:
         return Warehouse.objects.none()
-    
-    if user.is_superuser or user.is_staff:
-        return Warehouse.objects.all()
-    
-    # Перевіряємо наявність профілю та поля warehouses
-    if hasattr(user, 'profile') and hasattr(user.profile, 'warehouses'):
-        return user.profile.warehouses.all()
-        
-    # Якщо профілю немає або немає зв'язку
-    return Warehouse.objects.none()
+    return Warehouse.objects.filter(pk__in=ids)
 
 def restrict_warehouses_qs(qs, user, warehouse_field='warehouse'):
     """
@@ -70,25 +62,14 @@ def get_user_warehouses(user):
 def check_access(user, warehouse):
     """
     Перевіряє, чи має користувач доступ до конкретного складу (об'єкт або ID).
-    True - доступ є, False - немає.
+    Використовує кешовані IDs — без зайвого DB-запиту.
     """
     if user.is_superuser or user.is_staff:
         return True
 
-    if not hasattr(user, 'profile'):
-        return False
-        
-    # Отримуємо ID складу для перевірки
-    wh_id = warehouse
-    if hasattr(warehouse, 'id'):
-        wh_id = warehouse.id
-        
-    # Перевіряємо наявність у списку доступних
-    # Використовуємо filter().exists() для ефективності
-    if hasattr(user.profile, 'warehouses'):
-        return user.profile.warehouses.filter(id=wh_id).exists()
-        
-    return False
+    wh_id = warehouse.id if hasattr(warehouse, 'id') else warehouse
+    allowed_ids = get_user_warehouse_ids(user)
+    return wh_id in allowed_ids
 
 # ==============================================================================
 # 2. HELPER FUNCTIONS
@@ -450,18 +431,18 @@ def ajax_materials(request):
       ]
     }
     """
-    query = request.GET.get('q') or request.GET.get('term')
-    
-    materials = Material.objects.all().order_by('name')
-    
+    query = (request.GET.get('q') or request.GET.get('term') or '').strip().lower()
+
+    # Беремо з кешу (уникаємо DB-запиту при кожному натисканні клавіші)
+    all_items = get_materials_for_select()
+
     if query:
-        # Фільтрація по назві або артикулу
-        materials = materials.filter(
-            Q(name__icontains=query) | Q(article__icontains=query)
-        )
-    
-    # Оптимізація: беремо тільки потрібні поля і лімітуємо кількість
-    # Використовуємо values() для отримання словників
-    items = list(materials.values('id', 'name', 'unit', 'article')[:50])
-    
+        items = [
+            m for m in all_items
+            if query in m['name'].lower()
+            or (m['article'] and query in m['article'].lower())
+        ][:50]
+    else:
+        items = all_items[:50]
+
     return JsonResponse({'items': items})
