@@ -365,8 +365,8 @@ class Command(BaseCommand):
                 )
                 self.all_stages.append(stage)
 
-                # Ліміти для бетону, металу, блоків
-                target_cats = ['Бетон', 'Метал/Арматура', 'Цегла та блоки', 'Сипучі матеріали']
+                # Ліміти для бетону, металу, блоків та техніки
+                target_cats = ['Бетон', 'Метал/Арматура', 'Цегла та блоки', 'Сипучі матеріали', 'Спецтехніка та послуги']
                 for cat_name in target_cats:
                     for mat in self.mat_by_category.get(cat_name, [])[:2]:
                         qty = Decimal(str(random.randint(50, 800)))

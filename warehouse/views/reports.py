@@ -168,10 +168,10 @@ def reports_dashboard(request):
     return render(request, 'warehouse/reports.html', {
         'total_spent': total_spent,
         'spent_this_month': spent_this_month,
-        'wh_labels': json.dumps(wh_labels),
-        'wh_data': json.dumps(wh_data),
-        'month_labels': json.dumps(month_labels),
-        'month_data': json.dumps(month_data),
+        'wh_labels': wh_labels,
+        'wh_data': wh_data,
+        'month_labels': month_labels,
+        'month_data': month_data,
     })
 
 # ==============================================================================
@@ -551,10 +551,10 @@ def transfer_analytics(request):
     
     return render(request, 'warehouse/transfer_analytics.html', {
         'total_transfers': qs.count(),
-        'mat_labels': json.dumps(mat_labels),
-        'mat_data': json.dumps(mat_data),
-        'route_labels': json.dumps(route_labels),
-        'route_data': json.dumps(route_data),
+        'mat_labels': mat_labels,
+        'mat_data': mat_data,
+        'route_labels': route_labels,
+        'route_data': route_data,
         'date_from': date_from,
         'date_to': date_to
     })

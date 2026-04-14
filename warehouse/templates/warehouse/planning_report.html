@@ -3,41 +3,6 @@
 
 {% block title %}План закупівель{% endblock %}
 
-{% block extra_css %}
-<style>
-    .filter-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
-        border: 1px solid #e9ecef;
-        border-radius: 12px;
-    }
-    .table-container {
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    .plan-table thead {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: #f8f9fa;
-    }
-    .plan-row {
-        transition: background-color 0.15s;
-    }
-    .plan-row:hover {
-        background-color: #f8f9fa;
-    }
-    .plan-row.critical {
-        background-color: #fff5f5;
-    }
-    .plan-row.high {
-        background-color: #fffbeb;
-    }
-    .time-badge {
-        font-size: 0.7rem;
-        padding: 0.2em 0.5em;
-    }
-</style>
-{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -63,7 +28,7 @@
     </div>
 
     {# === FILTERS === #}
-    <div class="card filter-card shadow-sm mb-4 border-0 no-print">
+    <div class="card shadow-sm mb-4 border-0 bg-light no-print">
         <div class="card-body py-3">
             <form method="get" class="row g-3 align-items-end">
                 <div class="col-md-3">
@@ -98,7 +63,7 @@
     </div>
 
     {# === TABLE === #}
-    <div class="card shadow-sm border-0 table-container">
+    <div class="card shadow-sm border-0 overflow-hidden">
         <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold">
                 <i class="bi bi-list-check me-2 text-secondary"></i>Заплановані закупівлі
@@ -106,8 +71,8 @@
             <span class="badge bg-primary rounded-pill">{{ report_data|length }} записів</span>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 plan-table">
-                <thead>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light position-sticky top-0">
                     <tr class="text-muted small text-uppercase">
                         <th class="ps-3 fw-semibold">Дата потреби</th>
                         <th class="fw-semibold">Заявка</th>
@@ -120,10 +85,10 @@
                 </thead>
                 <tbody>
                     {% for row in report_data %}
-                    <tr class="plan-row {% if row.order.priority == 'critical' %}critical{% elif row.order.priority == 'high' %}high{% endif %}">
+                    <tr class="{% if row.order.priority == 'critical' %}table-danger{% elif row.order.priority == 'high' %}table-warning{% endif %}">
                         <td class="ps-3">
                             <div class="fw-bold text-dark">{{ row.date_needed|date:"d.m.Y" }}</div>
-                            <span class="badge bg-light text-muted border time-badge">
+                            <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">
                                 <i class="bi bi-clock me-1"></i>{{ row.date_needed|timeuntil }}
                             </span>
                         </td>

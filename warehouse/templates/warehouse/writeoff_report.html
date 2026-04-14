@@ -2,45 +2,6 @@
 
 {% block title %}Звіт про списання{% endblock %}
 
-{% block extra_css %}
-<style>
-    .stat-card {
-        border: none;
-        border-radius: 12px;
-        transition: transform 0.2s;
-    }
-    .stat-card:hover {
-        transform: translateY(-2px);
-    }
-    .table-container {
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    .writeoff-table thead {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: #f8f9fa;
-    }
-    .writeoff-row {
-        transition: background-color 0.15s;
-    }
-    .writeoff-row:hover {
-        background-color: #f8f9fa;
-    }
-    .writeoff-row.loss {
-        background-color: #fff5f5;
-    }
-    .type-badge {
-        font-size: 0.75rem;
-        padding: 0.35em 0.65em;
-    }
-    @media print {
-        .no-print { display: none !important; }
-        .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; }
-    }
-</style>
-{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -66,7 +27,7 @@
     {# === STATS CARDS === #}
     <div class="row g-3 mb-4 no-print">
         <div class="col-md-4">
-            <div class="card stat-card shadow-sm h-100 border-start border-4 border-warning">
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-warning">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
@@ -82,7 +43,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card stat-card shadow-sm h-100 border-start border-4 border-danger">
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-danger">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
@@ -98,7 +59,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card stat-card shadow-sm h-100 border-start border-4 border-secondary">
+            <div class="card border-0 shadow-sm h-100 border-start border-4 border-secondary">
                 <div class="card-body">
                     <div class="text-muted small text-uppercase fw-bold mb-2">Фільтр по періоду</div>
                     <form method="get" class="d-flex gap-2">
@@ -114,7 +75,7 @@
     </div>
 
     {# === TABLE === #}
-    <div class="card shadow-sm border-0 table-container">
+    <div class="card shadow-sm border-0 overflow-hidden">
         <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold">
                 <i class="bi bi-list-ul me-2 text-secondary"></i>Журнал списань
@@ -122,8 +83,8 @@
             <span class="badge bg-primary rounded-pill">{{ report_data|length }} записів</span>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 writeoff-table">
-                <thead>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light position-sticky top-0">
                     <tr class="text-muted small text-uppercase">
                         <th class="ps-3 fw-semibold">Дата</th>
                         <th class="fw-semibold">Об'єкт</th>
@@ -137,7 +98,7 @@
                 </thead>
                 <tbody>
                     {% for row in report_data %}
-                    <tr class="writeoff-row {% if row.type == 'LOSS' %}loss{% endif %}">
+                    <tr class="{% if row.type == 'LOSS' %}table-danger bg-opacity-10{% endif %}">
                         <td class="ps-3 text-nowrap">
                             <div class="text-dark">{{ row.date|date:"d.m.Y" }}</div>
                         </td>

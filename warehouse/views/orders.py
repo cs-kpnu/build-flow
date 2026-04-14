@@ -281,17 +281,24 @@ def mark_order_shipped(request, pk):
 @login_required
 def confirm_receipt(request, pk):
     """
-    Підтвердження отримання (на складі). 
-    Викликає сервіс inventory.process_order_receipt.
+    Підтвердження отримання (на складі).
+    GET  — показує форму прийому (confirm_receipt.html).
+    POST — викликає сервіс inventory.process_order_receipt і редіректить.
     """
     order = get_object_or_404(Order, pk=pk)
-    
+
     # Перевірка доступу до складу
     if not check_access(request.user, order.warehouse):
-         return HttpResponse("⛔ Немає доступу до складу цієї заявки", status=403)
-         
+        return HttpResponse("Немає доступу до складу цієї заявки", status=403)
+
+    # Прийом можливий лише коли товар в дорозі або ще не відправлений (purchasing)
+    if order.status not in ('transit', 'purchasing', 'approved'):
+        messages.warning(request, f"Заявку #{order.id} не можна прийняти — статус: {order.get_status_display()}.")
+        if request.user.is_staff:
+            return redirect('manager_order_detail', pk=order.id)
+        return redirect('foreman_order_detail', pk=order.id)
+
     if request.method == 'POST':
-        # Отримуємо дані з форми (фактична кількість по кожному товару)
         # Перевіряємо, що item_id належить саме цій заявці (захист від IDOR)
         valid_item_ids = set(str(i) for i in order.items.values_list('id', flat=True))
         items_data = {}
@@ -300,15 +307,17 @@ def confirm_receipt(request, pk):
                 item_id = key.split('_')[-1]
                 if item_id in valid_item_ids:
                     items_data[item_id] = value
-                
+
         proof_photo = request.FILES.get('proof_photo')
         comment = request.POST.get('comment', '')
-        
+
         try:
             inventory.process_order_receipt(order, items_data, request.user, proof_photo, comment)
-
             log_audit(request, 'ORDER_RECEIVED', order, new_val="Items added to stock")
             messages.success(request, f"Заявку #{order.id} успішно прийнято на склад!")
+            if request.user.is_staff:
+                return redirect('manager_order_detail', pk=order.id)
+            return redirect('foreman_order_detail', pk=order.id)
 
         except InsufficientStockError as e:
             messages.error(request, f"Недостатньо товару на складі: {e.material.name}")
@@ -317,12 +326,9 @@ def confirm_receipt(request, pk):
         except Exception as e:
             logger.exception(f"Order receipt failed for order {order.id}, user {request.user.id}")
             messages.error(request, "Помилка при прийомі товару. Спробуйте ще раз.")
-            
-    # Редірект залежно від ролі
-    if request.user.is_staff:
-        return redirect('manager_order_detail', pk=order.id)
-    else:
-        return redirect('foreman_order_detail', pk=order.id)
+
+    # GET або POST з помилкою — показуємо форму
+    return render(request, 'warehouse/confirm_receipt.html', {'order': order})
 
 
 # ==============================================================================

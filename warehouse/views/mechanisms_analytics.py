@@ -122,8 +122,8 @@ def mechanisms_analytics(request):
         'total_plan': total_plan,
         'total_fact': total_fact,
         'total_diff': total_plan - total_fact,
-        # JSON для графіка
-        'chart_labels': json.dumps(chart_labels),
-        'chart_plan_data': json.dumps(chart_plan_data),
-        'chart_fact_data': json.dumps(chart_fact_data),
+        # Передаємо сирі списки — json_script у шаблоні сам серіалізує
+        'chart_labels': chart_labels,
+        'chart_plan_data': chart_plan_data,
+        'chart_fact_data': chart_fact_data,
     })

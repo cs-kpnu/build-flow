@@ -232,7 +232,7 @@ def material_detail(request, pk):
             total_quantity += qty
             
     # 2. Оціночна вартість
-    total_value = total_quantity * float(material.current_avg_price)
+    total_value = float(total_quantity) * float(material.current_avg_price or 0)
     
     # 3. Історія операцій (останні 50)
     # Фільтруємо транзакції тільки по доступних складах

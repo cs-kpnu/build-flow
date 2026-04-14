@@ -2,44 +2,6 @@
 
 {% block title %}{{ material.name }}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .summary-card {
-        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-        border-radius: 16px;
-        color: white;
-    }
-    .summary-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        line-height: 1.2;
-    }
-    .detail-card {
-        border: none;
-        border-radius: 12px;
-    }
-    .stock-item {
-        transition: background-color 0.15s;
-    }
-    .stock-item:hover {
-        background-color: #f8f9fa;
-    }
-    .history-table thead {
-        position: sticky;
-        top: 0;
-        background: #f8f9fa;
-        z-index: 10;
-    }
-    .history-container {
-        max-height: 400px;
-        overflow-y: auto;
-    }
-    .type-badge {
-        font-size: 0.7rem;
-        padding: 0.25em 0.5em;
-    }
-</style>
-{% endblock %}
 
 {% block content %}
 <div class="container mt-4 mb-5" style="max-width: 1000px;">
@@ -65,26 +27,26 @@
     </div>
 
     {# === SUMMARY CARD === #}
-    <div class="card summary-card shadow mb-4">
+    <div class="card shadow mb-4 text-white" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); border-radius: 16px;">
         <div class="card-body p-4">
             <div class="row text-center">
                 <div class="col-md-4 border-end border-white border-opacity-25">
                     <div class="opacity-75 small text-uppercase mb-1">Загальна кількість</div>
-                    <div class="summary-value">
+                    <div class="fs-1 fw-bold lh-sm">
                         {{ total_quantity|floatformat:2 }}
                         <span class="fs-5 opacity-75">{{ material.unit }}</span>
                     </div>
                 </div>
                 <div class="col-md-4 border-end border-white border-opacity-25">
                     <div class="opacity-75 small text-uppercase mb-1">Оціночна вартість</div>
-                    <div class="summary-value">
+                    <div class="fs-1 fw-bold lh-sm">
                         {{ total_value|floatformat:0 }}
                         <span class="fs-5 opacity-75">₴</span>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="opacity-75 small text-uppercase mb-1">Середня ціна</div>
-                    <div class="summary-value">
+                    <div class="fs-1 fw-bold lh-sm">
                         {{ material.current_avg_price|floatformat:2 }}
                         <span class="fs-5 opacity-75">₴/{{ material.unit }}</span>
                     </div>
@@ -96,7 +58,7 @@
     <div class="row g-4">
         {# === STOCK DISTRIBUTION === #}
         <div class="col-md-5">
-            <div class="card detail-card shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-0 py-3">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-geo-alt me-2 text-primary"></i>Наявність на об'єктах
@@ -104,7 +66,7 @@
                 </div>
                 <ul class="list-group list-group-flush">
                     {% for item in stock_distribution %}
-                    <li class="list-group-item stock-item d-flex justify-content-between align-items-center py-3">
+                    <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
                         <div>
                             <span class="fw-bold text-dark">{{ item.warehouse }}</span>
                         </div>
@@ -131,15 +93,15 @@
 
         {# === TRANSACTION HISTORY === #}
         <div class="col-md-7">
-            <div class="card detail-card shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-0 py-3">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-clock-history me-2 text-secondary"></i>Останні операції
                     </h5>
                 </div>
-                <div class="history-container">
-                    <table class="table table-hover mb-0 align-middle history-table">
-                        <thead>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light position-sticky top-0">
                             <tr class="text-muted small text-uppercase">
                                 <th class="ps-3 fw-semibold">Дата</th>
                                 <th class="fw-semibold">Тип</th>
@@ -195,7 +157,7 @@
 
     {# === ADDITIONAL INFO === #}
     {% if material.characteristics or material.min_limit > 0 %}
-    <div class="card detail-card shadow-sm mt-4">
+    <div class="card border-0 shadow-sm mt-4">
         <div class="card-header bg-white border-0 py-3">
             <h5 class="mb-0 fw-bold">
                 <i class="bi bi-info-circle me-2 text-info"></i>Додаткова інформація
