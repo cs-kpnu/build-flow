@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.views.decorators.http import require_POST, require_GET
@@ -9,15 +9,20 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
+import io
 import logging
+
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 
 logger = logging.getLogger('warehouse')
 
-from ..models import Order, UserProfile, Warehouse, ConstructionStage, Material, Transaction
+from ..models import Order, UserProfile, Warehouse, ConstructionStage, Material, Transaction, Category
 from ..forms import UserUpdateForm, ProfileUpdateForm
-from .utils import get_user_warehouses, get_warehouse_balance, check_access
-from ..decorators import rate_limit
+from .utils import get_user_warehouses, get_warehouse_balance, check_access, log_audit
+from ..decorators import rate_limit, staff_required
 
 # ==============================================================================
 # ГОЛОВНА СТОРІНКА
@@ -293,3 +298,231 @@ def ajax_materials(request):
     # Повертаємо топ-50 результатів
     results = list(materials.values('id', 'name')[:50])
     return JsonResponse(results, safe=False)
+
+
+# ==============================================================================
+# МАСОВИЙ ІМПОРТ МАТЕРІАЛІВ З EXCEL
+# ==============================================================================
+
+# Очікувані заголовки колонок (нечутливі до регістру та пробілів)
+_IMPORT_COLUMNS = ['назва', 'артикул', 'одиниця', 'категорія', 'характеристики', 'мін. залишок', 'середня ціна']
+
+_HEADER_STYLE = {
+    'font': Font(bold=True, color='FFFFFF'),
+    'fill': PatternFill(fill_type='solid', fgColor='1F3864'),
+    'alignment': Alignment(horizontal='center', vertical='center', wrap_text=True),
+}
+
+
+def _safe_decimal(value, default=Decimal('0')):
+    """Безпечно конвертує значення в Decimal ≥ 0."""
+    if value is None or str(value).strip() == '':
+        return default
+    try:
+        d = Decimal(str(value).replace(',', '.').strip())
+        return max(d, Decimal('0'))
+    except InvalidOperation:
+        return None  # сигнал про помилку
+
+
+def _normalize_header(cell_value):
+    return str(cell_value or '').strip().lower()
+
+
+@staff_required
+def import_materials_template(request):
+    """Завантаження порожнього Excel-шаблону для імпорту матеріалів."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Матеріали'
+
+    headers = ['Назва *', 'Артикул', 'Одиниця (шт за замовч.)', 'Категорія', 'Характеристики', 'Мін. залишок', 'Середня ціна (грн)']
+    col_widths = [40, 18, 22, 20, 35, 16, 20]
+
+    thin = Side(style='thin', color='CCCCCC')
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for col_idx, (header, width) in enumerate(zip(headers, col_widths), start=1):
+        cell = ws.cell(row=1, column=col_idx, value=header)
+        cell.font = _HEADER_STYLE['font']
+        cell.fill = _HEADER_STYLE['fill']
+        cell.alignment = _HEADER_STYLE['alignment']
+        cell.border = border
+        ws.column_dimensions[get_column_letter(col_idx)].width = width
+
+    ws.row_dimensions[1].height = 28
+
+    # Приклад рядка
+    example = ['Цемент М400', 'CEM-400', 'кг', 'Будматеріали', 'Портландцемент, мішок 25 кг', '500', '4.50']
+    example_fill = PatternFill(fill_type='solid', fgColor='EBF1DE')
+    for col_idx, val in enumerate(example, start=1):
+        cell = ws.cell(row=2, column=col_idx, value=val)
+        cell.fill = example_fill
+        cell.border = border
+
+    ws.freeze_panes = 'A2'
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    response = HttpResponse(
+        buf.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = 'attachment; filename="materials_import_template.xlsx"'
+    return response
+
+
+@staff_required
+def import_materials(request):
+    """
+    GET  — форма завантаження Excel.
+    POST — обробка файлу: upsert матеріалів по артикулу або назві.
+
+    Логіка upsert:
+    - Якщо артикул заповнений і вже існує → UPDATE
+    - Якщо артикул заповнений і новий      → CREATE
+    - Якщо артикул порожній                → пошук по точному імені → UPDATE або CREATE
+    """
+    if request.method != 'POST':
+        return render(request, 'warehouse/import_materials.html')
+
+    uploaded = request.FILES.get('excel_file')
+    if not uploaded:
+        messages.error(request, 'Будь ласка, оберіть файл Excel.')
+        return render(request, 'warehouse/import_materials.html')
+
+    if not uploaded.name.endswith(('.xlsx', '.xls')):
+        messages.error(request, 'Допускаються тільки файли .xlsx або .xls.')
+        return render(request, 'warehouse/import_materials.html')
+
+    try:
+        wb = openpyxl.load_workbook(uploaded, data_only=True)
+    except Exception:
+        messages.error(request, 'Не вдалося відкрити файл. Переконайтесь, що це коректний Excel.')
+        return render(request, 'warehouse/import_materials.html')
+
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows:
+        messages.error(request, 'Файл порожній.')
+        return render(request, 'warehouse/import_materials.html')
+
+    # Визначаємо заголовки (перший рядок)
+    raw_headers = [_normalize_header(h) for h in rows[0]]
+
+    # Маппінг колонок: canonical_name → індекс
+    col_map = {}
+    for idx, h in enumerate(raw_headers):
+        h_clean = h.replace('*', '').replace('(шт за замовч.)', '').replace('(грн)', '').strip()
+        if 'назва' in h_clean:
+            col_map['name'] = idx
+        elif 'артикул' in h_clean:
+            col_map['article'] = idx
+        elif 'одиниц' in h_clean:
+            col_map['unit'] = idx
+        elif 'категорі' in h_clean:
+            col_map['category'] = idx
+        elif 'характерист' in h_clean:
+            col_map['characteristics'] = idx
+        elif 'мін' in h_clean:
+            col_map['min_limit'] = idx
+        elif 'середн' in h_clean or 'ціна' in h_clean:
+            col_map['current_avg_price'] = idx
+
+    if 'name' not in col_map:
+        messages.error(request, 'Колонка "Назва" не знайдена. Перевірте заголовки файлу.')
+        return render(request, 'warehouse/import_materials.html')
+
+    # Кеш категорій (get_or_create по імені)
+    category_cache = {}
+
+    def get_category(cat_name):
+        if not cat_name:
+            return None
+        cat_name = str(cat_name).strip()
+        if not cat_name:
+            return None
+        if cat_name not in category_cache:
+            cat, _ = Category.objects.get_or_create(name=cat_name)
+            category_cache[cat_name] = cat
+        return category_cache[cat_name]
+
+    # Обробка рядків
+    created = updated = skipped = 0
+    row_errors = []
+
+    for row_num, row in enumerate(rows[1:], start=2):
+        def get_col(key):
+            idx = col_map.get(key)
+            if idx is None:
+                return None
+            val = row[idx] if idx < len(row) else None
+            return str(val).strip() if val is not None else ''
+
+        name = get_col('name')
+        if not name:
+            skipped += 1
+            continue  # порожній рядок
+
+        article = get_col('article') or None
+        unit = get_col('unit') or 'шт'
+        category = get_category(get_col('category'))
+        characteristics = get_col('characteristics') or ''
+
+        min_limit = _safe_decimal(get_col('min_limit'), Decimal('0'))
+        avg_price = _safe_decimal(get_col('current_avg_price'), Decimal('0'))
+
+        if min_limit is None:
+            row_errors.append(f'Рядок {row_num}: некоректний "Мін. залишок" — пропущено.')
+            skipped += 1
+            continue
+        if avg_price is None:
+            row_errors.append(f'Рядок {row_num}: некоректна "Середня ціна" — пропущено.')
+            skipped += 1
+            continue
+
+        # Знаходимо або створюємо матеріал
+        material = None
+        is_new = False
+
+        if article:
+            material = Material.objects.filter(article=article).first()
+        if material is None:
+            material = Material.objects.filter(name=name).first()
+        if material is None:
+            material = Material()
+            is_new = True
+
+        material.name = name
+        if article:
+            material.article = article
+        material.unit = unit
+        material.characteristics = characteristics
+        material.category = category
+        material.min_limit = min_limit.quantize(Decimal('0.001'))
+        # Середню ціну оновлюємо лише якщо явно задана (не 0) або новий матеріал
+        if avg_price > 0 or is_new:
+            material.current_avg_price = avg_price.quantize(Decimal('0.01'))
+
+        try:
+            material.save()
+            if is_new:
+                created += 1
+            else:
+                updated += 1
+        except Exception as e:
+            row_errors.append(f'Рядок {row_num} ({name}): помилка збереження — {e}')
+            skipped += 1
+
+    log_audit(request, 'CREATE', new_val=f'Excel import: +{created} created, ~{updated} updated, {skipped} skipped')
+
+    return render(request, 'warehouse/import_materials.html', {
+        'result': {
+            'created': created,
+            'updated': updated,
+            'skipped': skipped,
+            'errors': row_errors,
+            'total': created + updated + skipped,
+        }
+    })

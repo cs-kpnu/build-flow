@@ -1,0 +1,177 @@
+{% extends 'warehouse/base.html' %}
+
+{% block title %}Імпорт матеріалів — БудСклад{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 800px;">
+
+    <div class="d-flex align-items-center mb-4">
+        <i class="bi bi-file-earmark-excel fs-3 text-success me-3"></i>
+        <div>
+            <h3 class="mb-0 fw-bold">Імпорт матеріалів з Excel</h3>
+            <small class="text-muted">Масове додавання або оновлення довідника матеріалів</small>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {# ===== РЕЗУЛЬТАТ ІМПОРТУ ===== #}
+    {% if result %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Результат імпорту
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-4">
+                    <div class="text-center p-3 bg-success bg-opacity-10 rounded">
+                        <div class="fs-2 fw-bold text-success">{{ result.created }}</div>
+                        <small class="text-muted">Створено</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="text-center p-3 bg-warning bg-opacity-10 rounded">
+                        <div class="fs-2 fw-bold text-warning">{{ result.updated }}</div>
+                        <small class="text-muted">Оновлено</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="text-center p-3 bg-secondary bg-opacity-10 rounded">
+                        <div class="fs-2 fw-bold text-secondary">{{ result.skipped }}</div>
+                        <small class="text-muted">Пропущено</small>
+                    </div>
+                </div>
+            </div>
+
+            {% if result.errors %}
+            <div class="alert alert-warning mb-0">
+                <div class="fw-bold mb-2"><i class="bi bi-exclamation-triangle me-1"></i>Помилки ({{ result.errors|length }})</div>
+                <ul class="mb-0 small">
+                    {% for err in result.errors %}
+                        <li>{{ err }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="mt-3 d-flex gap-2">
+                <a href="{% url 'material_list' %}" class="btn btn-success">
+                    <i class="bi bi-list-ul me-1"></i>Перейти до матеріалів
+                </a>
+                <a href="{% url 'import_materials' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-upload me-1"></i>Завантажити ще
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ===== ФОРМА ЗАВАНТАЖЕННЯ ===== #}
+    {% if not result %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-upload me-2 text-primary"></i>Завантажити файл Excel
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Файл Excel (.xlsx або .xls)</label>
+                    <input type="file" name="excel_file" class="form-control form-control-lg"
+                           accept=".xlsx,.xls" required>
+                    <div class="form-text">Максимальний розмір: 5 МБ. Перший рядок — заголовки.</div>
+                </div>
+                <button type="submit" class="btn btn-success btn-lg px-4">
+                    <i class="bi bi-cloud-upload me-2"></i>Імпортувати
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {# ===== ІНСТРУКЦІЯ ===== #}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-info-circle me-2 text-info"></i>Формат файлу
+                </h5>
+                <a href="{% url 'import_materials_template' %}" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-file-earmark-arrow-down me-1"></i>Завантажити шаблон
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Перший рядок файлу має містити заголовки колонок:</p>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle small">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Колонка</th>
+                            <th>Обов'язкова?</th>
+                            <th>Опис</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Назва</strong></td>
+                            <td><span class="badge bg-danger">Так</span></td>
+                            <td>Назва матеріалу</td>
+                        </tr>
+                        <tr>
+                            <td>Артикул</td>
+                            <td><span class="badge bg-secondary">Ні</span></td>
+                            <td>Унікальний код / SKU. Якщо заповнено — використовується для пошуку при оновленні</td>
+                        </tr>
+                        <tr>
+                            <td>Одиниця</td>
+                            <td><span class="badge bg-secondary">Ні</span></td>
+                            <td>Одиниця виміру (шт, кг, м, л…). За замовчуванням: <code>шт</code></td>
+                        </tr>
+                        <tr>
+                            <td>Категорія</td>
+                            <td><span class="badge bg-secondary">Ні</span></td>
+                            <td>Назва категорії. Якщо категорія не існує — буде створена автоматично</td>
+                        </tr>
+                        <tr>
+                            <td>Характеристики</td>
+                            <td><span class="badge bg-secondary">Ні</span></td>
+                            <td>Довільний текст-опис</td>
+                        </tr>
+                        <tr>
+                            <td>Мін. залишок</td>
+                            <td><span class="badge bg-secondary">Ні</span></td>
+                            <td>Мінімальний залишок для сповіщень. Число ≥ 0</td>
+                        </tr>
+                        <tr>
+                            <td>Середня ціна</td>
+                            <td><span class="badge bg-secondary">Ні</span></td>
+                            <td>Початкова середня ціна (грн). Оновлюється лише якщо значення &gt; 0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-info small mt-3 mb-0">
+                <i class="bi bi-lightbulb me-1"></i>
+                <strong>Логіка оновлення:</strong>
+                якщо артикул заповнено і вже існує — матеріал <strong>оновлюється</strong>.
+                Якщо артикул новий або не вказаний — шукається збіг по назві.
+                Якщо збігів немає — матеріал <strong>створюється</strong>.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -95,6 +95,8 @@ urlpatterns = [
     # ==============================================================================
     path('materials/', general.material_list, name='material_list'),
     path('materials/<int:pk>/', general.material_detail, name='material_detail'),
+    path('materials/import/', general.import_materials, name='import_materials'),
+    path('materials/import/template/', general.import_materials_template, name='import_materials_template'),
 
     # ==============================================================================
     # ЗВІТИ (REPORTS)
