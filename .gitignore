@@ -41,3 +41,4 @@ htmlcov/
 .pytest_cache/
 .claude/settings.local.json
 image.png
+test_import.xlsx
