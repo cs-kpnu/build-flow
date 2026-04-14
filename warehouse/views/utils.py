@@ -222,9 +222,61 @@ def get_stock_json(user=None):
 # 4. АУДИТ ТА ЖУРНАЛИ
 # ==============================================================================
 
-def log_audit(request, action_type, affected_object=None, old_val=None, new_val=None):
+def capture_order_snapshot(order):
+    """
+    Знімає поточні значення відстежуваних полів Order.
+    Повертає dict {field: display_value} для подальшого порівняння.
+    """
+    return {
+        'status':        (order.status, order.get_status_display()),
+        'priority':      (order.priority, order.get_priority_display()),
+        'note':          (order.note, order.note),
+        'expected_date': (
+            str(order.expected_date) if order.expected_date else None,
+            order.expected_date.strftime('%d.%m.%Y') if order.expected_date else '—',
+        ),
+        'warehouse_id':  (
+            order.warehouse_id,
+            str(order.warehouse) if order.warehouse_id else '—',
+        ),
+    }
+
+
+# Мітки полів Order для відображення в журналі
+ORDER_FIELD_LABELS = {
+    'status':        'Статус',
+    'priority':      'Пріоритет',
+    'note':          'Примітка',
+    'expected_date': 'Очікувана дата',
+    'warehouse_id':  'Склад',
+}
+
+
+def compute_order_diff(old_snapshot, new_order):
+    """
+    Порівнює snapshot (до збереження) з поточним станом order.
+    Повертає dict змінених полів або порожній dict.
+
+    Формат: {field: {old: "...", new: "...", label: "..."}}
+    """
+    new_snapshot = capture_order_snapshot(new_order)
+    changed = {}
+    for field, (old_raw, old_display) in old_snapshot.items():
+        new_raw, new_display = new_snapshot[field]
+        if str(old_raw) != str(new_raw):
+            changed[field] = {
+                'old': old_display,
+                'new': new_display,
+                'label': ORDER_FIELD_LABELS.get(field, field),
+            }
+    return changed
+
+
+def log_audit(request, action_type, affected_object=None, old_val=None, new_val=None,
+              changed_fields=None):
     """
     Записує дію в журнал аудиту (AuditLog).
+    changed_fields: dict {field: {old, new, label}} для поле-рівневого логування.
     Fail-safe версія.
     """
     user = None
@@ -261,11 +313,20 @@ def log_audit(request, action_type, affected_object=None, old_val=None, new_val=
         'action_type': action_type,
         'old_value': str(old_val) if old_val is not None else None,
         'new_value': str(new_val) if new_val is not None else None,
-        'ip_address': ip
+        'ip_address': ip,
     }
 
-    if 'affected_object' in allowed_fields:
-        audit_kwargs['affected_object'] = affected_object
+    if 'changed_fields' in allowed_fields and changed_fields:
+        audit_kwargs['changed_fields'] = changed_fields
+
+    if 'content_type' in allowed_fields and affected_object is not None:
+        from django.contrib.contenttypes.models import ContentType
+        try:
+            ct = ContentType.objects.get_for_model(affected_object)
+            audit_kwargs['content_type'] = ct
+            audit_kwargs['object_id'] = affected_object.pk
+        except Exception:
+            pass
 
     try:
         AuditLog.objects.create(**audit_kwargs)

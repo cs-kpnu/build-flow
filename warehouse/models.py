@@ -391,7 +391,13 @@ class AuditLog(models.Model):
     
     old_value = models.TextField(null=True, blank=True)
     new_value = models.TextField(null=True, blank=True)
-    
+    changed_fields = models.JSONField(
+        "Змінені поля",
+        null=True,
+        blank=True,
+        help_text='JSON: {"field": {"old": "...", "new": "...", "label": "..."}}'
+    )
+
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 

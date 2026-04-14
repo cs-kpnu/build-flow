@@ -14,7 +14,8 @@ from ..models import (
 )
 from .utils import (
     get_warehouse_balance, log_audit,
-    get_allowed_warehouses, restrict_warehouses_qs, enforce_warehouse_access_or_404
+    get_allowed_warehouses, restrict_warehouses_qs, enforce_warehouse_access_or_404,
+    capture_order_snapshot, compute_order_diff,
 )
 from ..decorators import staff_required
 
@@ -235,10 +236,14 @@ def order_edit(request, pk):
 
         if form.is_valid() and formset.is_valid():
             with transaction.atomic():
+                old_snapshot = capture_order_snapshot(order)
                 form.save()
                 formset.save()
+                changed = compute_order_diff(old_snapshot, order)
 
-                log_audit(request, 'UPDATE', order, new_val="Edited by manager")
+                log_audit(request, 'UPDATE', order,
+                          new_val="Відредаговано менеджером",
+                          changed_fields=changed or None)
                 messages.success(request, "Заявку оновлено.")
                 return redirect('manager_order_detail', pk=pk)
     else:
@@ -266,6 +271,7 @@ def order_approve(request, pk):
     enforce_warehouse_access_or_404(request.user, order.warehouse)
 
     if request.method == 'POST':
+        old_status = order.get_status_display()
         order.status = 'approved'
         order._actor = request.user
         order.save()
@@ -275,7 +281,10 @@ def order_approve(request, pk):
             author=request.user,
             text="✅ Заявку погоджено. Передано в закупівлю."
         )
-
+        log_audit(request, 'ORDER_STATUS', order,
+                  changed_fields={'status': {
+                      'old': old_status, 'new': order.get_status_display(), 'label': 'Статус',
+                  }})
         messages.success(request, f"Заявку #{order.id} погоджено!")
         return redirect('manager_order_detail', pk=pk)
     
@@ -296,6 +305,7 @@ def order_reject(request, pk):
 
     if request.method == 'POST':
         reason = request.POST.get('reason', 'Без пояснення')
+        old_status = order.get_status_display()
         order.status = 'rejected'
         order._actor = request.user
         order.save()
@@ -305,7 +315,11 @@ def order_reject(request, pk):
             author=request.user,
             text=f"🚫 Заявку відхилено. Причина: {reason}"
         )
-
+        log_audit(request, 'ORDER_STATUS', order,
+                  old_val=f"Причина: {reason}",
+                  changed_fields={'status': {
+                      'old': old_status, 'new': order.get_status_display(), 'label': 'Статус',
+                  }})
         messages.warning(request, f"Заявку #{order.id} відхилено.")
         return redirect('manager_order_detail', pk=pk)
 
@@ -329,6 +343,7 @@ def order_to_purchasing(request, pk):
             messages.error(request, "Заявку можна передати в закупівлю лише зі статусу 'Погоджено'.")
             return redirect('manager_order_detail', pk=pk)
 
+        old_status = order.get_status_display()
         order.status = 'purchasing'
         order._actor = request.user
         order.save()
@@ -338,7 +353,10 @@ def order_to_purchasing(request, pk):
             author=request.user,
             text="🛒 Заявку передано в закупівлю."
         )
-
+        log_audit(request, 'ORDER_STATUS', order,
+                  changed_fields={'status': {
+                      'old': old_status, 'new': order.get_status_display(), 'label': 'Статус',
+                  }})
         messages.success(request, f"Заявку #{order.id} передано в закупівлю!")
         return redirect('manager_order_detail', pk=pk)
 

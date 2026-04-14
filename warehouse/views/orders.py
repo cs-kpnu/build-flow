@@ -18,7 +18,7 @@ from ..models import Order, OrderItem, Warehouse, Material, Supplier, AuditLog, 
 from ..forms import OrderForm, OrderItemFormSet
 from ..services import inventory
 from ..services.inventory import InsufficientStockError
-from .utils import log_audit, check_access
+from .utils import log_audit, check_access, capture_order_snapshot, compute_order_diff
 from ..decorators import rate_limit, staff_required
 
 # ==============================================================================
@@ -189,10 +189,14 @@ def edit_order(request, pk):
         if form.is_valid() and formset.is_valid():
             try:
                 with transaction.atomic():
+                    old_snapshot = capture_order_snapshot(order)
                     form.save()
                     formset.save()
+                    changed = compute_order_diff(old_snapshot, order)
 
-                    log_audit(request, 'UPDATE', order, new_val="Редаговано заявку")
+                    log_audit(request, 'UPDATE', order,
+                              new_val="Редаговано заявку",
+                              changed_fields=changed or None)
                     messages.success(request, f"Заявку #{order.id} успішно оновлено!")
 
                     if request.user.is_staff:
@@ -269,11 +273,15 @@ def mark_order_shipped(request, pk):
         note_add = f"\n[Логістика] Водій: {driver_phone}, Авто: {vehicle_number}"
         order.note += note_add
         
+        old_status = order.get_status_display()
         order.status = 'transit'
         order._actor = request.user
         order.save()
 
-        log_audit(request, 'ORDER_STATUS', order, new_val="TRANSIT")
+        log_audit(request, 'ORDER_STATUS', order,
+                  changed_fields={'status': {
+                      'old': old_status, 'new': order.get_status_display(), 'label': 'Статус',
+                  }})
         messages.success(request, f"Заявку #{order.id} відправлено (Transit).")
         
     return redirect('logistics_monitor')
