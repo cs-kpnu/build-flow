@@ -137,10 +137,12 @@ class ImportMaterialsViewTest(TestCase):
     # ------------------------------------------------------------------
 
     def test_empty_rows_skipped(self):
+        # openpyxl не зберігає повністю-None рядки, тому використовуємо
+        # рядки з порожнім або пробільним іменем
         xlsx = _make_excel(
             ['Матеріал А', 'MAT-A', 'шт', '', '', '0', '0'],
-            ['', '', '', '', '', '', ''],     # порожній
-            [None, None, None, None, None, None, None],  # None-рядок
+            ['', '', '', '', '', '', ''],        # порожнє ім'я
+            ['   ', '', '', '', '', '', ''],     # ім'я з пробілів (strip → '')
         )
         resp = self.client.post(self.url, {'excel_file': xlsx})
         result = resp.context['result']
