@@ -1,6 +1,6 @@
 <div align="center">
 
-# BuildFlow ERP
+# Budsklad ERP
 
 **Система управління закупівлями та складом для будівельних компаній**
 
