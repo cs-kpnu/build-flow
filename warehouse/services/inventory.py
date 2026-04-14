@@ -316,6 +316,7 @@ def process_order_receipt(order, items_data, user, proof_photo=None, comment="")
 
     # === ФАЗА 3: Оновлення статусу заявки ===
     order.status = 'completed'
+    order._actor = user
 
     if proof_photo and hasattr(order, 'proof_photo'):
         try:

@@ -267,14 +267,15 @@ def order_approve(request, pk):
 
     if request.method == 'POST':
         order.status = 'approved'
+        order._actor = request.user
         order.save()
-        
+
         OrderComment.objects.create(
             order=order,
             author=request.user,
             text="✅ Заявку погоджено. Передано в закупівлю."
         )
-        
+
         messages.success(request, f"Заявку #{order.id} погоджено!")
         return redirect('manager_order_detail', pk=pk)
     
@@ -296,14 +297,15 @@ def order_reject(request, pk):
     if request.method == 'POST':
         reason = request.POST.get('reason', 'Без пояснення')
         order.status = 'rejected'
+        order._actor = request.user
         order.save()
-        
+
         OrderComment.objects.create(
             order=order,
             author=request.user,
             text=f"🚫 Заявку відхилено. Причина: {reason}"
         )
-        
+
         messages.warning(request, f"Заявку #{order.id} відхилено.")
         return redirect('manager_order_detail', pk=pk)
 
@@ -328,6 +330,7 @@ def order_to_purchasing(request, pk):
             return redirect('manager_order_detail', pk=pk)
 
         order.status = 'purchasing'
+        order._actor = request.user
         order.save()
 
         OrderComment.objects.create(
@@ -492,6 +495,7 @@ def split_order(request, pk):
                 
                 if original_order.items.count() == 0:
                     original_order.status = 'rejected'
+                    original_order._actor = request.user
                     original_order.note += " (Всі товари перенесено)"
                     original_order.save()
 

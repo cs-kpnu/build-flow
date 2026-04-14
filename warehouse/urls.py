@@ -135,4 +135,14 @@ urlpatterns = [
     
     # Друк
     path('order/<int:pk>/print/', orders.print_order_pdf, name='print_order_pdf'),
+
+    # ==============================================================================
+    # КОШИК (TRASH / SOFT-DELETE)
+    # ==============================================================================
+    path('trash/', orders.trash_view, name='trash'),
+    path('trash/order/<int:pk>/restore/', orders.restore_order, name='restore_order'),
+    path('trash/order/<int:pk>/delete/', orders.delete_order_permanent, name='delete_order_permanent'),
+    path('trash/transaction/<int:pk>/restore/', orders.restore_transaction, name='restore_transaction'),
+    path('trash/transaction/<int:pk>/delete/', orders.delete_transaction_permanent, name='delete_transaction_permanent'),
+    path('transaction/<int:pk>/delete/', orders.delete_transaction, name='delete_transaction'),
 ]

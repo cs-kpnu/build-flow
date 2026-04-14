@@ -252,11 +252,15 @@ class ProfileUpdateForm(forms.ModelForm):
     """Редагування розширених даних профілю (UserProfile)"""
     class Meta:
         model = UserProfile
-        fields = ['phone', 'photo', 'position']
+        fields = ['phone', 'photo', 'position', 'telegram_chat_id']
         widgets = {
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'position': forms.TextInput(attrs={'class': 'form-control'}),
             'photo': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'telegram_chat_id': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'напр. 123456789 — дізнайтесь у @userinfobot',
+            }),
         }
 
     def clean_photo(self):

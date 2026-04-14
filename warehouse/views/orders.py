@@ -14,7 +14,7 @@ from decimal import Decimal
 
 logger = logging.getLogger('warehouse')
 
-from ..models import Order, OrderItem, Warehouse, Material, Supplier, AuditLog
+from ..models import Order, OrderItem, Warehouse, Material, Supplier, AuditLog, Transaction
 from ..forms import OrderForm, OrderItemFormSet
 from ..services import inventory
 from ..services.inventory import InsufficientStockError
@@ -217,21 +217,20 @@ def edit_order(request, pk):
 @login_required
 def delete_order(request, pk):
     """
-    Видалення заявки.
+    М'яке видалення заявки (переміщення до кошика).
     """
     order = get_object_or_404(Order, pk=pk)
-    
-    # Перевірка прав
+
     if not request.user.is_staff and order.created_by != request.user:
         return HttpResponse("⛔ Немає доступу", status=403)
-        
-    if order.status != 'new':
-        messages.error(request, "Можна видаляти тільки нові заявки.")
+
+    if order.status not in ('new', 'rejected'):
+        messages.error(request, "До кошика можна перемістити лише нову або відхилену заявку.")
     else:
-        log_audit(request, 'DELETE', order, old_val=f"Order #{order.id} deleted")
-        order.delete()
-        messages.success(request, "Заявку успішно видалено.")
-        
+        log_audit(request, 'DELETE', order, old_val=f"Order #{order.id} moved to trash")
+        order.delete()  # soft delete
+        messages.success(request, f"Заявку #{order.id} переміщено до кошика.")
+
     if request.user.is_staff:
         return redirect('manager_dashboard')
     return redirect('index')
@@ -271,8 +270,9 @@ def mark_order_shipped(request, pk):
         order.note += note_add
         
         order.status = 'transit'
+        order._actor = request.user
         order.save()
-        
+
         log_audit(request, 'ORDER_STATUS', order, new_val="TRANSIT")
         messages.success(request, f"Заявку #{order.id} відправлено (Transit).")
         
@@ -375,3 +375,99 @@ def print_order_pdf(request, pk):
         return HttpResponse("⛔ Немає доступу", status=403)
         
     return render(request, 'warehouse/print_order.html', {'order': order})
+
+
+# ==============================================================================
+# КОШИК (SOFT-DELETE TRASH)
+# ==============================================================================
+
+@staff_required
+def trash_view(request):
+    """
+    Кошик: відображає м'яко видалені заявки та транзакції.
+    Доступний тільки для персоналу (is_staff).
+    """
+    deleted_orders = (
+        Order.all_objects
+        .filter(is_deleted=True)
+        .select_related('created_by', 'warehouse')
+        .order_by('-deleted_at')
+    )
+    deleted_transactions = (
+        Transaction.all_objects
+        .filter(is_deleted=True)
+        .select_related('material', 'warehouse', 'created_by')
+        .order_by('-deleted_at')
+    )
+    return render(request, 'warehouse/trash.html', {
+        'deleted_orders': deleted_orders,
+        'deleted_transactions': deleted_transactions,
+        'page_title': 'Кошик',
+    })
+
+
+@staff_required
+def restore_order(request, pk):
+    """Відновлення заявки з кошика."""
+    order = Order.all_objects.filter(pk=pk, is_deleted=True).first()
+    if not order:
+        messages.error(request, "Заявку не знайдено в кошику.")
+        return redirect('trash')
+    order.restore()
+    log_audit(request, 'UPDATE', order, new_val=f"Order #{order.id} restored from trash")
+    messages.success(request, f"Заявку #{order.id} відновлено.")
+    return redirect('trash')
+
+
+@staff_required
+def delete_order_permanent(request, pk):
+    """Остаточне (фізичне) видалення заявки з кошика."""
+    order = Order.all_objects.filter(pk=pk, is_deleted=True).first()
+    if not order:
+        messages.error(request, "Заявку не знайдено в кошику.")
+        return redirect('trash')
+    if request.method == 'POST':
+        order_id = order.id
+        log_audit(request, 'DELETE', order, old_val=f"Order #{order.id} permanently deleted")
+        order.hard_delete()
+        messages.success(request, f"Заявку #{order_id} остаточно видалено.")
+    return redirect('trash')
+
+
+@staff_required
+def delete_transaction(request, pk):
+    """М'яке видалення транзакції (переміщення до кошика)."""
+    txn = get_object_or_404(Transaction, pk=pk)
+    log_audit(request, 'DELETE', txn, old_val=f"Transaction #{txn.id} moved to trash")
+    txn.delete()  # soft delete
+    messages.success(request, f"Транзакцію #{txn.id} переміщено до кошика.")
+    next_url = request.POST.get('next') or request.GET.get('next') or 'index'
+    return redirect(next_url)
+
+
+@staff_required
+def restore_transaction(request, pk):
+    """Відновлення транзакції з кошика."""
+    txn = Transaction.all_objects.filter(pk=pk, is_deleted=True).first()
+    if not txn:
+        messages.error(request, "Транзакцію не знайдено в кошику.")
+        return redirect('trash')
+    txn.restore()
+    log_audit(request, 'UPDATE', txn, new_val=f"Transaction #{txn.id} restored from trash")
+    messages.success(request, f"Транзакцію #{txn.id} відновлено.")
+    return redirect('trash')
+
+
+@staff_required
+def delete_transaction_permanent(request, pk):
+    """Остаточне (фізичне) видалення транзакції з кошика."""
+    txn = Transaction.all_objects.filter(pk=pk, is_deleted=True).first()
+    if not txn:
+        messages.error(request, "Транзакцію не знайдено в кошику.")
+        return redirect('trash')
+    if request.method == 'POST':
+        txn_id = txn.id
+        log_audit(request, 'DELETE', txn, old_val=f"Transaction #{txn.id} permanently deleted")
+        txn.hard_delete()
+        messages.success(request, f"Транзакцію #{txn_id} остаточно видалено.")
+    return redirect('trash')

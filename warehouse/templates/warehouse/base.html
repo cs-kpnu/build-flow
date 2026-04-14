@@ -277,7 +277,12 @@
                             <i class="bi bi-shield-lock"></i> Аудит дій
                         </a>
                     </li>
-                
+                    <li class="nav-item">
+                        <a href="{% url 'trash' %}" class="nav-link {% if route_name == 'trash' %}active{% endif %}">
+                            <i class="bi bi-trash3"></i> Кошик
+                        </a>
+                    </li>
+
                 {% else %}
                     <!-- === МЕНЮ ПРОРАБА === -->
                     <div class="sidebar-heading">Прораб/Склад</div>

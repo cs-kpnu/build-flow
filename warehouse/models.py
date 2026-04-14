@@ -11,6 +11,50 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 
 
+# ==============================================================================
+# SOFT-DELETE MIXIN
+# ==============================================================================
+
+class SoftDeleteManager(models.Manager):
+    """Менеджер за замовчуванням — повертає тільки НЕ видалені записи."""
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
+class AllObjectsManager(models.Manager):
+    """Менеджер, що повертає ВСІ записи (включно з видаленими). Для кошика/адмінки."""
+    def get_queryset(self):
+        return super().get_queryset()
+
+
+class SoftDeleteMixin(models.Model):
+    """
+    Домішок soft-delete: замість фізичного видалення ставить прапорець is_deleted.
+    """
+    is_deleted = models.BooleanField("Видалено", default=False, db_index=True)
+    deleted_at = models.DateTimeField("Дата видалення", null=True, blank=True)
+
+    objects = SoftDeleteManager()
+    all_objects = AllObjectsManager()
+
+    class Meta:
+        abstract = True
+
+    def delete(self, using=None, keep_parents=False):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save(update_fields=['is_deleted', 'deleted_at'])
+
+    def restore(self):
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save(update_fields=['is_deleted', 'deleted_at'])
+
+    def hard_delete(self):
+        """Фізичне видалення — тільки з кошика."""
+        super().delete()
+
+
 class Warehouse(models.Model):
     name = models.CharField("Назва складу / Об'єкту", max_length=100)
     address = models.CharField("Адреса", max_length=255, blank=True)
@@ -180,7 +224,7 @@ class StageLimit(models.Model):
         unique_together = [('stage', 'material')]
 
 
-class Order(models.Model):
+class Order(SoftDeleteMixin, models.Model):
     STATUS_CHOICES = [
         ('new', 'Нова'),
         ('rfq', 'Запит ціни (RFQ)'),
@@ -268,7 +312,7 @@ class OrderComment(models.Model):
         ordering = ['created_at']
 
 
-class Transaction(models.Model):
+class Transaction(SoftDeleteMixin, models.Model):
     TYPE_CHOICES = [
         ('IN', 'Прихід'),
         ('OUT', 'Списання'),
@@ -363,6 +407,12 @@ class UserProfile(models.Model):
     photo = models.ImageField(upload_to='avatars/', null=True, blank=True)
     position = models.CharField("Посада", max_length=100, blank=True)
     warehouses = models.ManyToManyField(Warehouse, blank=True, verbose_name='Доступні склади')
+    telegram_chat_id = models.CharField(
+        "Telegram Chat ID",
+        max_length=50,
+        blank=True,
+        help_text="ID чату Telegram для отримання сповіщень. Дізнайтесь у @userinfobot."
+    )
 
     def __str__(self):
         return self.user.username

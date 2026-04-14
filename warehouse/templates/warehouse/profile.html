@@ -164,6 +164,18 @@
                         <label class="form-label small text-muted mb-1">Email</label>
                         <div>{{ user.email|default:"Не вказано" }}</div>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">
+                            <i class="bi bi-telegram me-1 text-info"></i>Telegram Chat ID
+                        </label>
+                        {% if user.profile.telegram_chat_id %}
+                            <div class="text-success fw-bold">
+                                <i class="bi bi-check-circle me-1"></i>Підключено ({{ user.profile.telegram_chat_id }})
+                            </div>
+                        {% else %}
+                            <div class="text-muted small">Не підключено — вкажіть ID для отримання сповіщень</div>
+                        {% endif %}
+                    </div>
                     <hr>
                     <a href="{% url 'password_change' %}" class="btn btn-outline-danger w-100">
                         <i class="bi bi-shield-lock me-2"></i>Змінити пароль
@@ -242,6 +254,13 @@
                         <div class="col-12">
                             <label class="form-label small fw-bold">Фото профілю</label>
                             {{ p_form.photo }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">
+                                <i class="bi bi-telegram me-1 text-info"></i>Telegram Chat ID
+                            </label>
+                            {{ p_form.telegram_chat_id }}
+                            <div class="form-text">Дізнайтесь свій ID у боті <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a>. Потрібен для отримання сповіщень про зміну статусу заявок.</div>
                         </div>
                     </div>
                 </div>

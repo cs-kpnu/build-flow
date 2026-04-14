@@ -274,6 +274,10 @@ else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     DEFAULT_FROM_EMAIL = 'noreply@localhost'
 
+# --- TELEGRAM NOTIFICATIONS ---
+
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+
 # Адміністратори для сповіщень про 500 помилки
 ADMINS = [
     (name.strip(), email.strip())
