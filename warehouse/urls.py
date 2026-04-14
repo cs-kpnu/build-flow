@@ -135,6 +135,7 @@ urlpatterns = [
     
     # Друк
     path('order/<int:pk>/print/', orders.print_order_pdf, name='print_order_pdf'),
+    path('order/<int:pk>/qr-labels/', orders.print_order_qr_labels, name='print_order_qr_labels'),
 
     # ==============================================================================
     # КОШИК (TRASH / SOFT-DELETE)

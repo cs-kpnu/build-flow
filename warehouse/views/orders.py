@@ -385,6 +385,22 @@ def print_order_pdf(request, pk):
     return render(request, 'warehouse/print_order.html', {'order': order})
 
 
+@login_required
+def print_order_qr_labels(request, pk):
+    """
+    Сторінка друку QR-етикеток для матеріалів заявки.
+    QR-код кодує 'MAT:{material.pk}' для сканування при прийомі товару.
+    """
+    order = get_object_or_404(Order, pk=pk)
+    if not request.user.is_staff and not check_access(request.user, order.warehouse):
+        return HttpResponse("⛔ Немає доступу", status=403)
+    items = order.items.select_related('material').all()
+    return render(request, 'warehouse/print_order_qr_labels.html', {
+        'order': order,
+        'items': items,
+    })
+
+
 # ==============================================================================
 # КОШИК (SOFT-DELETE TRASH)
 # ==============================================================================
