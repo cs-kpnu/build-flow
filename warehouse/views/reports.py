@@ -630,7 +630,8 @@ def problem_areas(request):
     
     return render(request, 'warehouse/problem_areas.html', {
         'overdue': overdue,
-        'recent_losses': losses
+        'recent_losses': losses,
+        'today': timezone.now().date(),
     })
 
 @staff_required
