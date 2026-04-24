@@ -8,7 +8,7 @@
     <h3 class="mb-4 fw-bold"><i class="bi bi-graph-up-arrow me-2"></i> Аналітика переміщень</h3>
 
     <!-- ФІЛЬТРИ -->
-    <form method="get" class="card shadow-sm mb-4 border-0 bg-light no-print">
+    <form method="get" class="card shadow-sm mb-4 border-0 bg-body-secondary no-print">
         <div class="card-body row g-2 align-items-end">
             <div class="col-md-3">
                 <label class="small fw-bold text-muted">Період з</label>
@@ -31,7 +31,7 @@
             <div class="card border-0 shadow-sm h-100 border-start border-4 border-info">
                 <div class="card-body">
                     <div class="text-uppercase small text-muted fw-bold mb-1">Всього рейсів</div>
-                    <div class="fs-2 fw-bold text-dark">{{ total_transfers }}</div>
+                    <div class="fs-2 fw-bold text-body">{{ total_transfers }}</div>
                     <small class="text-muted">За обраний період</small>
                 </div>
             </div>
@@ -44,7 +44,7 @@
         <!-- ГРАФІК 1: ТОП МАТЕРІАЛІВ -->
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 fw-bold">
+                <div class="card-header border-0 fw-bold">
                     📦 Що найчастіше возять?
                 </div>
                 <div class="card-body">
@@ -58,7 +58,7 @@
         <!-- ГРАФІК 2: ПОПУЛЯРНІ МАРШРУТИ (Звідки) -->
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 fw-bold">
+                <div class="card-header border-0 fw-bold">
                     🚚 Активність складів-відправників
                 </div>
                 <div class="card-body">

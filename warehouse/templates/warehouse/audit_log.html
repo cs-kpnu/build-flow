@@ -7,7 +7,7 @@
     <h3 class="mb-4 fw-bold"><i class="bi bi-shield-check me-2"></i> Журнал дій користувачів</h3>
 
     <!-- ФІЛЬТРИ -->
-    <div class="card shadow-sm mb-4 border-0 bg-light">
+    <div class="card shadow-sm mb-4 border-0 bg-body-secondary">
         <div class="card-body py-3">
             <form method="get" class="row g-2 align-items-end">
                 <div class="col-md-3">
@@ -52,7 +52,7 @@
                     <tr>
                         <td class="text-muted">{{ log.timestamp|date:"d.m.Y H:i:s" }}</td>
                         <td>
-                            <div class="fw-bold text-dark">
+                            <div class="fw-bold text-body">
                                 <i class="bi bi-person-fill text-secondary"></i> {{ log.user.username }}
                             </div>
                             <div class="text-muted small">
@@ -64,13 +64,13 @@
                             {% if log.action_type == 'CREATE' %}
                                 <span class="badge bg-success bg-opacity-25 text-success border border-success">Створення</span>
                             {% elif log.action_type == 'UPDATE' %}
-                                <span class="badge bg-warning bg-opacity-25 text-dark border border-warning">Зміна</span>
+                                <span class="badge bg-warning bg-opacity-25 text-body border border-warning">Зміна</span>
                             {% elif log.action_type == 'DELETE' %}
                                 <span class="badge bg-danger bg-opacity-25 text-danger border border-danger">Видалення</span>
                             {% elif log.action_type == 'WRITEOFF' %}
                                 <span class="badge bg-dark text-white">Списання</span>
                             {% elif log.action_type == 'CHANGE_PRICE' %}
-                                <span class="badge bg-info text-dark">Ціна</span>
+                                <span class="badge bg-info text-body">Ціна</span>
                             {% else %}
                                 <span class="badge bg-secondary">{{ log.get_action_type_display }}</span>
                             {% endif %}
@@ -117,7 +117,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="card-footer bg-light text-muted small d-flex justify-content-between align-items-center">
+        <div class="card-footer bg-body-secondary text-muted small d-flex justify-content-between align-items-center">
             <span>Показано {{ logs.start_index }}–{{ logs.end_index }} з {{ logs.paginator.count }} записів</span>
             {% if logs.has_other_pages %}
             <nav>

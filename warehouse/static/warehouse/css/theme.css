@@ -70,13 +70,7 @@ body {
     color: var(--theme-sidebar-muted) !important;
 }
 
-/* =====================================================
-   Header (desktop top bar)
-   ===================================================== */
-header {
-    background: var(--theme-header-bg) !important;
-    border-bottom-color: var(--theme-header-border) !important;
-}
+/* Header використовує Bootstrap bg-body + border-bottom — окремий CSS не потрібен */
 
 /* =====================================================
    Mobile header

@@ -13,7 +13,7 @@
             <div class="card h-100 border-danger shadow-sm">
                 <div class="card-header bg-danger text-white fw-bold d-flex justify-content-between">
                     <span>🔥 Протерміновані поставки (Active)</span>
-                    <span class="badge bg-white text-danger">{{ overdue|length }}</span>
+                    <span class="badge text-danger">{{ overdue|length }}</span>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 align-middle">
@@ -67,7 +67,7 @@
         <!-- 2. ПЕРЕВИТРАТИ БЮДЖЕТУ (DRILL-DOWN) -->
         <div class="col-lg-6">
             <div class="card h-100 border-warning shadow-sm">
-                <div class="card-header bg-warning text-dark fw-bold d-flex justify-content-between">
+                <div class="card-header bg-warning text-body fw-bold d-flex justify-content-between">
                     <span>💰 Перевищення бюджету</span>
                     <span class="badge bg-dark text-warning">{{ critical_wh|length }}</span>
                 </div>
@@ -98,7 +98,7 @@
                             </tr>
                             <tr>
                                 <td colspan="4" class="p-0 border-0">
-                                    <div class="collapse bg-white p-3 border-bottom" id="collapse{{ forloop.counter }}">
+                                    <div class="collapse p-3 border-bottom" id="collapse{{ forloop.counter }}">
                                         <h6 class="small text-muted fw-bold mb-2">ТОП-3 Витрати:</h6>
                                         <ul class="list-group list-group-flush small">
                                             {% for exp in item.top_expenses %}
@@ -141,7 +141,7 @@
                         <tbody>
                             {% for item in shortages %}
                             <tr>
-                                <td><a href="{% url 'manager_order_detail' item.order.id %}" class="text-dark">#{{ item.order.id }}</a></td>
+                                <td><a href="{% url 'manager_order_detail' item.order.id %}" class="text-body">#{{ item.order.id }}</a></td>
                                 <td>
                                     <!-- Безпечний вивід матеріалів (Канонічний) -->
                                     {% for ord_item in item.order.items.all|slice:":2" %}

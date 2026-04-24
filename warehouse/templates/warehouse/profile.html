@@ -94,9 +94,9 @@
                 <p class="mb-2 opacity-75">{{ user.profile.position|default:"Співробітник" }}</p>
                 <div>
                     {% if user.is_staff %}
-                        <span class="badge bg-warning text-dark"><i class="bi bi-shield-check me-1"></i>Менеджер</span>
+                        <span class="badge bg-warning text-body"><i class="bi bi-shield-check me-1"></i>Менеджер</span>
                     {% else %}
-                        <span class="badge bg-light text-dark"><i class="bi bi-person-badge me-1"></i>Прораб</span>
+                        <span class="badge bg-body-secondary text-body"><i class="bi bi-person-badge me-1"></i>Прораб</span>
                     {% endif %}
                 </div>
             </div>
@@ -108,7 +108,7 @@
         {# === MY WAREHOUSES === #}
         <div class="col-lg-7">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 py-3">
+                <div class="card-header border-0 py-3">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-geo-alt me-2 text-primary"></i>Мої об'єкти
                     </h5>
@@ -120,7 +120,7 @@
                         {% for wh in assigned_warehouses %}
                         <div class="warehouse-item p-3 d-flex justify-content-between align-items-center {% if wh.id == active_wh_id %}active{% endif %}">
                             <div>
-                                <div class="fw-bold text-dark">{{ wh.name }}</div>
+                                <div class="fw-bold text-body">{{ wh.name }}</div>
                                 {% if wh.address %}
                                     <small class="text-muted"><i class="bi bi-pin-map me-1"></i>{{ wh.address }}</small>
                                 {% endif %}
@@ -150,7 +150,7 @@
         <div class="col-lg-5">
             {# Personal Info #}
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-0 py-3">
+                <div class="card-header border-0 py-3">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-person me-2 text-secondary"></i>Контактні дані
                     </h5>
@@ -185,7 +185,7 @@
 
             {# Stats #}
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 py-3">
+                <div class="card-header border-0 py-3">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-bar-chart me-2 text-info"></i>Моя статистика
                     </h5>
@@ -264,7 +264,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light border-0">
+                <div class="modal-footer bg-body-secondary border-0">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
                     <button type="submit" class="btn btn-primary fw-bold">
                         <i class="bi bi-check-lg me-1"></i>Зберегти

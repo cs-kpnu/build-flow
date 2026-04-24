@@ -41,7 +41,7 @@
         <div class="text-end">
             <span class="badge 
                 {% if order.status == 'new' %}bg-primary
-                {% elif order.status == 'transit' %}bg-info text-dark
+                {% elif order.status == 'transit' %}bg-info text-body
                 {% elif order.status == 'completed' %}bg-success
                 {% elif order.status == 'rejected' %}bg-danger
                 {% else %}bg-secondary{% endif %}">

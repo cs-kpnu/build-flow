@@ -12,7 +12,7 @@
     </div>
 
     <!-- ФІЛЬТРИ -->
-    <div class="card shadow-sm mb-4 border-0 bg-light no-print">
+    <div class="card shadow-sm mb-4 border-0 bg-body-secondary no-print">
         <div class="card-body py-3">
             <form method="get" class="row g-2 align-items-end">
                 <div class="col-md-3">
@@ -37,7 +37,7 @@
     <div class="card shadow-sm border-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
+                <thead class="bg-body-secondary">
                     <tr>
                         <th class="ps-4">Дата</th>
                         <th>Матеріал</th>
@@ -57,17 +57,17 @@
                         </td>
                         
                         <td>
-                            <div class="fw-bold text-dark">{{ row.material }}</div>
+                            <div class="fw-bold text-body">{{ row.material }}</div>
                             <small class="text-muted">{{ row.description|truncatechars:30 }}</small>
                         </td>
                         
                         <td class="text-center">
-                            <span class="badge bg-light text-dark border fs-6">{{ row.quantity }} {{ row.unit }}</span>
+                            <span class="badge bg-body-secondary text-body border fs-6">{{ row.quantity }} {{ row.unit }}</span>
                         </td>
                         
                         <td>
                             <div class="d-flex align-items-center">
-                                <span class="badge bg-warning text-dark me-2">{{ row.source_wh }}</span>
+                                <span class="badge bg-warning text-body me-2">{{ row.source_wh }}</span>
                                 <i class="bi bi-arrow-right text-muted"></i>
                                 <span class="badge bg-success ms-2">{{ row.target_wh }}</span>
                             </div>
@@ -75,7 +75,7 @@
                         
                         <td>
                             <div class="d-flex align-items-center small">
-                                <div class="bg-light rounded-circle border d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px;">
+                                <div class="bg-body-secondary rounded-circle border d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px;">
                                     <i class="bi bi-person text-secondary" style="font-size: 12px;"></i>
                                 </div>
                                 {{ row.initiator }}

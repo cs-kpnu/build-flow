@@ -69,7 +69,7 @@
                     <li class="breadcrumb-item active">{{ warehouse.name }}</li>
                 </ol>
             </nav>
-            <h1 class="h4 fw-bold text-dark mb-1">{{ warehouse.name }}</h1>
+            <h1 class="h4 fw-bold text-body mb-1">{{ warehouse.name }}</h1>
             {% if warehouse.address %}
                 <p class="text-muted small mb-0"><i class="bi bi-geo-alt me-1"></i>{{ warehouse.address }}</p>
             {% endif %}
@@ -109,7 +109,7 @@
             <div class="card stat-card shadow-sm h-100">
                 <div class="card-body text-center py-3">
                     <div class="text-muted small text-uppercase fw-bold mb-1">Ліміт</div>
-                    <div class="fs-3 fw-bold text-dark">{{ warehouse.budget_limit|floatformat:0 }} ₴</div>
+                    <div class="fs-3 fw-bold text-body">{{ warehouse.budget_limit|floatformat:0 }} ₴</div>
                 </div>
             </div>
         </div>
@@ -129,7 +129,7 @@
         {# === STOCK BALANCE === #}
         <div class="col-lg-5">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-box-seam me-2 text-primary"></i>Поточні залишки
                     </h5>
@@ -148,14 +148,14 @@
                             {% for item in stock_list %}
                             <tr>
                                 <td class="ps-3">
-                                    <div class="fw-bold text-dark">{{ item.name }}</div>
+                                    <div class="fw-bold text-body">{{ item.name }}</div>
                                     <small class="text-muted">{{ item.unit }}</small>
                                     {% if item.status == 'critical' %}
                                         <span class="badge bg-danger ms-1">Мало!</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
-                                    <span class="fs-5 fw-bold {% if item.status == 'critical' %}text-danger{% else %}text-dark{% endif %}">
+                                    <span class="fs-5 fw-bold {% if item.status == 'critical' %}text-danger{% else %}text-body{% endif %}">
                                         {{ item.quantity|floatformat:2 }}
                                     </span>
                                 </td>
@@ -175,7 +175,7 @@
                             {% endfor %}
                         </tbody>
                         {% if stock_list %}
-                        <tfoot class="bg-light">
+                        <tfoot class="bg-body-secondary">
                             <tr>
                                 <td colspan="2" class="text-end fw-bold ps-3">Всього:</td>
                                 <td class="text-end fw-bold pe-3 text-success fs-5">{{ total_value|floatformat:2 }} ₴</td>
@@ -190,7 +190,7 @@
         {# === TRANSACTION HISTORY === #}
         <div class="col-lg-7">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-0 py-3">
+                <div class="card-header border-0 py-3">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-clock-history me-2 text-secondary"></i>Історія руху
                     </h5>
@@ -242,21 +242,21 @@
                             {% if not tr.transfer_group_id or tr.transaction_type == 'OUT' %}
                             <tr class="transaction-row {% if tr.transfer_group_id %}transfer{% endif %}">
                                 <td class="ps-3 text-nowrap">
-                                    <div class="text-dark">{{ tr.date|date:"d.m.y" }}</div>
+                                    <div class="text-body">{{ tr.date|date:"d.m.y" }}</div>
                                     <div class="text-muted" style="font-size: 0.7rem;">{{ tr.created_at|date:"H:i" }}</div>
                                 </td>
                                 <td>
                                     {% if tr.transfer_group_id %}
-                                        <span class="badge bg-info text-dark">Переміщення</span>
+                                        <span class="badge bg-info text-body">Переміщення</span>
                                     {% elif tr.transaction_type == 'IN' %}
                                         <span class="badge bg-success">Прихід</span>
                                     {% elif tr.transaction_type == 'OUT' %}
-                                        <span class="badge bg-warning text-dark">Витрата</span>
+                                        <span class="badge bg-warning text-body">Витрата</span>
                                     {% elif tr.transaction_type == 'LOSS' %}
                                         <span class="badge bg-danger">Втрата</span>
                                     {% endif %}
                                 </td>
-                                <td class="fw-bold text-dark">{{ tr.material.name|truncatechars:30 }}</td>
+                                <td class="fw-bold text-body">{{ tr.material.name|truncatechars:30 }}</td>
                                 <td>
                                     <span class="{% if tr.transaction_type == 'IN' %}qty-in{% else %}qty-out{% endif %}">
                                         {% if tr.transaction_type == 'IN' %}+{% else %}-{% endif %}{{ tr.quantity|floatformat:2 }}

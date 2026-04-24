@@ -10,7 +10,7 @@
     {# === HEADER === #}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h4 fw-bold text-dark mb-1">
+            <h1 class="h4 fw-bold text-body mb-1">
                 <i class="bi bi-calendar-check me-2 text-primary"></i>План закупівель
             </h1>
             <p class="text-muted small mb-0">Очікувані поставки та терміни виконання</p>
@@ -28,7 +28,7 @@
     </div>
 
     {# === FILTERS === #}
-    <div class="card shadow-sm mb-4 border-0 bg-light no-print">
+    <div class="card shadow-sm mb-4 border-0 bg-body-secondary no-print">
         <div class="card-body py-3">
             <form method="get" class="row g-3 align-items-end">
                 <div class="col-md-3">
@@ -64,7 +64,7 @@
 
     {# === TABLE === #}
     <div class="card shadow-sm border-0 overflow-hidden">
-        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold">
                 <i class="bi bi-list-check me-2 text-secondary"></i>Заплановані закупівлі
             </h5>
@@ -87,8 +87,8 @@
                     {% for row in report_data %}
                     <tr class="{% if row.order.priority == 'critical' %}table-danger{% elif row.order.priority == 'high' %}table-warning{% endif %}">
                         <td class="ps-3">
-                            <div class="fw-bold text-dark">{{ row.date_needed|date:"d.m.Y" }}</div>
-                            <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">
+                            <div class="fw-bold text-body">{{ row.date_needed|date:"d.m.Y" }}</div>
+                            <span class="badge bg-body-secondary text-muted border" style="font-size: 0.7rem;">
                                 <i class="bi bi-clock me-1"></i>{{ row.date_needed|timeuntil }}
                             </span>
                         </td>
@@ -105,9 +105,9 @@
                             {% if row.order.priority == 'critical' %}
                                 <span class="badge bg-danger"><i class="bi bi-fire me-1"></i>Критичний</span>
                             {% elif row.order.priority == 'high' %}
-                                <span class="badge bg-warning text-dark">Високий</span>
+                                <span class="badge bg-warning text-body">Високий</span>
                             {% else %}
-                                <span class="badge bg-light text-dark border">{{ row.order.get_priority_display }}</span>
+                                <span class="badge bg-body-secondary text-body border">{{ row.order.get_priority_display }}</span>
                             {% endif %}
                         </td>
                         <td>

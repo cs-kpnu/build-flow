@@ -10,7 +10,7 @@
     </div>
 
     <!-- ФІЛЬТРИ -->
-    <div class="card shadow-sm mb-4 border-0 bg-light no-print">
+    <div class="card shadow-sm mb-4 border-0 bg-body-secondary no-print">
         <div class="card-body py-3">
             <form method="get" class="row g-2 align-items-end">
                 <div class="col-6 col-lg-2">
@@ -66,14 +66,14 @@
                         <td>
                             {% if row.transfer_group_id %}
                                 {% if row.transaction_type == 'IN' %}
-                                    <span class="badge bg-info text-dark border border-info">ТРАНСФЕР (ВХ)</span>
+                                    <span class="badge bg-info text-body border border-info">ТРАНСФЕР (ВХ)</span>
                                 {% else %}
                                     <span class="badge bg-primary border border-primary">ТРАНСФЕР (ВИХ)</span>
                                 {% endif %}
                             {% elif row.transaction_type == 'IN' %}
                                 <span class="badge bg-success">ПРИХІД</span>
                             {% elif row.transaction_type == 'OUT' %}
-                                <span class="badge bg-warning text-dark">ВИТРАТА</span>
+                                <span class="badge bg-warning text-body">ВИТРАТА</span>
                             {% elif row.transaction_type == 'LOSS' %}
                                 <span class="badge bg-danger">ВТРАТА</span>
                             {% endif %}

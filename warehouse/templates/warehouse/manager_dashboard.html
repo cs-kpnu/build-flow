@@ -63,7 +63,7 @@
     {# === HEADER === #}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h4 fw-bold text-dark mb-1">{{ page_title }}</h1>
+            <h1 class="h4 fw-bold text-body mb-1">{{ page_title }}</h1>
             <p class="text-muted small mb-0">Оперативна інформація станом на сьогодні</p>
         </div>
         <a href="{% url 'create_order' %}" class="btn btn-primary shadow-sm">
@@ -108,7 +108,7 @@
                         <i class="bi bi-cart fs-4"></i>
                     </div>
                     <div>
-                        <div class="kpi-value text-dark">{{ stats.purchasing }}</div>
+                        <div class="kpi-value text-body">{{ stats.purchasing }}</div>
                         <div class="kpi-label text-muted">Закупівля</div>
                     </div>
                 </div>
@@ -122,7 +122,7 @@
                         <i class="bi bi-truck fs-4"></i>
                     </div>
                     <div>
-                        <div class="kpi-value text-dark">{{ stats.transit }}</div>
+                        <div class="kpi-value text-body">{{ stats.transit }}</div>
                         <div class="kpi-label text-muted">В дорозі</div>
                     </div>
                 </div>
@@ -161,7 +161,7 @@
         {# === RECENT ORDERS TABLE === #}
         <div class="col-lg-8">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-clipboard-data me-2 text-primary"></i>Останні заявки
                     </h5>
@@ -185,10 +185,10 @@
                             {% for order in recent_orders %}
                             <tr class="order-row" onclick="location.href='{% url 'manager_order_detail' order.id %}'">
                                 <td class="ps-3">
-                                    <span class="fw-bold text-dark">#{{ order.id }}</span>
+                                    <span class="fw-bold text-body">#{{ order.id }}</span>
                                 </td>
                                 <td>
-                                    <span class="text-dark">{{ order.warehouse.name }}</span>
+                                    <span class="text-body">{{ order.warehouse.name }}</span>
                                 </td>
                                 <td>
                                     <small class="text-muted">{{ order.created_by.get_full_name|default:order.created_by.username }}</small>
@@ -199,13 +199,13 @@
                                     {% elif order.status == 'approved' %}
                                         <span class="badge bg-success rounded-pill">Погоджено</span>
                                     {% elif order.status == 'purchasing' %}
-                                        <span class="badge bg-warning text-dark rounded-pill">Закупівля</span>
+                                        <span class="badge bg-warning text-body rounded-pill">Закупівля</span>
                                     {% elif order.status == 'transit' %}
-                                        <span class="badge bg-info text-dark rounded-pill">В дорозі</span>
+                                        <span class="badge bg-info text-body rounded-pill">В дорозі</span>
                                     {% elif order.status == 'completed' %}
                                         <span class="badge bg-secondary rounded-pill">Виконано</span>
                                     {% else %}
-                                        <span class="badge bg-light text-dark border rounded-pill">{{ order.get_status_display }}</span>
+                                        <span class="badge bg-body-secondary text-body border rounded-pill">{{ order.get_status_display }}</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-end text-muted small">{{ order.created_at|date:"d.m.Y" }}</td>
@@ -237,7 +237,7 @@
         {# === CRITICAL STOCK ALERT === #}
         <div class="col-lg-4">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold text-danger">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>Критичні залишки
                     </h5>
@@ -249,7 +249,7 @@
                         <li class="list-group-item critical-item py-3">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <div class="fw-bold text-dark">{{ material.name }}</div>
+                                    <div class="fw-bold text-body">{{ material.name }}</div>
                                     <small class="text-muted d-block">
                                         Мін. ліміт: <span class="text-danger fw-bold">{{ material.min_limit }} {{ material.unit }}</span>
                                     </small>
@@ -271,7 +271,7 @@
                     </ul>
                 </div>
                 {% if low_stock_materials %}
-                <div class="card-footer bg-white border-0 text-center py-3">
+                <div class="card-footer border-0 text-center py-3">
                     <a href="{% url 'stock_balance_report' %}" class="btn btn-sm btn-outline-danger fw-bold">
                         <i class="bi bi-box-seam me-1"></i>Переглянути всі залишки
                     </a>

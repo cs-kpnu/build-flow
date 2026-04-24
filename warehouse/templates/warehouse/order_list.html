@@ -43,7 +43,7 @@
     {# === HEADER === #}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h4 fw-bold text-dark mb-1">
+            <h1 class="h4 fw-bold text-body mb-1">
                 <i class="bi bi-clipboard-data me-2 text-primary"></i>Журнал заявок
             </h1>
             <p class="text-muted small mb-0">Історія всіх заявок на закупівлю та переміщення</p>
@@ -113,13 +113,13 @@
                     {% for order in orders %}
                     <tr class="order-row" onclick="location.href='{% if user.is_staff %}{% url 'manager_order_detail' order.id %}{% else %}{% url 'foreman_order_detail' order.id %}{% endif %}'">
                         <td class="ps-3">
-                            <span class="fw-bold text-dark">#{{ order.id }}</span>
+                            <span class="fw-bold text-body">#{{ order.id }}</span>
                             <br>
                             <small class="text-muted">{{ order.created_at|date:"d.m.Y" }}</small>
                         </td>
                         <td>
                             {% if order.source_warehouse %}
-                                <span class="badge bg-info text-dark route-badge">
+                                <span class="badge bg-info text-body route-badge">
                                     <i class="bi bi-arrow-left-right me-1"></i>Переміщення
                                 </span>
                                 <div class="small text-muted mt-1">
@@ -134,7 +134,7 @@
                         </td>
                         <td>
                             {% for item in order.items.all|slice:":2" %}
-                                <div class="small {% if forloop.first %}fw-bold text-dark{% else %}text-muted{% endif %}">
+                                <div class="small {% if forloop.first %}fw-bold text-body{% else %}text-muted{% endif %}">
                                     {{ item.material.name|truncatechars:40 }}
                                 </div>
                             {% endfor %}
@@ -143,7 +143,7 @@
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            <span class="badge bg-light text-dark border fw-bold">{{ order.items.count }}</span>
+                            <span class="badge bg-body-secondary text-body border fw-bold">{{ order.items.count }}</span>
                         </td>
                         <td>
                             {% if order.status == 'new' %}
@@ -151,15 +151,15 @@
                             {% elif order.status == 'approved' %}
                                 <span class="badge bg-success status-badge">Погоджено</span>
                             {% elif order.status == 'purchasing' %}
-                                <span class="badge bg-warning text-dark status-badge">Закупівля</span>
+                                <span class="badge bg-warning text-body status-badge">Закупівля</span>
                             {% elif order.status == 'transit' %}
-                                <span class="badge bg-info text-dark status-badge">В дорозі</span>
+                                <span class="badge bg-info text-body status-badge">В дорозі</span>
                             {% elif order.status == 'completed' %}
                                 <span class="badge bg-secondary status-badge">Виконано</span>
                             {% elif order.status == 'rejected' %}
                                 <span class="badge bg-danger status-badge">Відхилено</span>
                             {% else %}
-                                <span class="badge bg-light text-dark border status-badge">{{ order.get_status_display }}</span>
+                                <span class="badge bg-body-secondary text-body border status-badge">{{ order.get_status_display }}</span>
                             {% endif %}
                             {% if order.priority == 'high' %}
                                 <span class="badge bg-danger status-badge ms-1" title="Терміново">
@@ -200,7 +200,7 @@
 
         {# === PAGINATION === #}
         {% if orders.has_other_pages %}
-        <div class="card-footer bg-white border-top py-3">
+        <div class="card-footer border-top py-3">
             <nav aria-label="Pagination">
                 <ul class="pagination pagination-sm justify-content-center mb-0">
                     {% if orders.has_previous %}

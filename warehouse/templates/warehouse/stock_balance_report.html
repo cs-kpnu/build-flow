@@ -51,7 +51,7 @@
     {# === HEADER === #}
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
-            <h1 class="h4 fw-bold text-dark mb-1">
+            <h1 class="h4 fw-bold text-body mb-1">
                 <i class="bi bi-box-seam me-2 text-primary"></i>Залишки на складах
             </h1>
             <p class="text-muted small mb-0">Поточний стан матеріалів по всіх об'єктах</p>
@@ -103,7 +103,7 @@
 
     {# === TABLE === #}
     <div class="card shadow-sm border-0 table-container">
-        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center no-print">
+        <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center no-print">
             <h5 class="mb-0 fw-bold">
                 <i class="bi bi-list-ul me-2 text-secondary"></i>Список матеріалів
             </h5>
@@ -128,7 +128,7 @@
                             <span class="text-muted fw-bold small">{{ row.warehouse }}</span>
                         </td>
                         <td>
-                            <div class="fw-bold text-dark">{{ row.material }}</div>
+                            <div class="fw-bold text-body">{{ row.material }}</div>
                             {% if row.characteristics %}
                                 <span class="badge bg-info bg-opacity-10 text-info border border-info characteristics-badge">
                                     {{ row.characteristics }}
@@ -139,7 +139,7 @@
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            <span class="fs-5 fw-bold {% if row.status == 'critical' %}text-danger{% else %}text-dark{% endif %}">
+                            <span class="fs-5 fw-bold {% if row.status == 'critical' %}text-danger{% else %}text-body{% endif %}">
                                 {{ row.quantity|floatformat:2 }}
                             </span>
                         </td>
@@ -160,7 +160,7 @@
                     {% endfor %}
                 </tbody>
                 {% if report_data %}
-                <tfoot class="bg-light">
+                <tfoot class="bg-body-secondary">
                     <tr>
                         <td colspan="5" class="text-end fw-bold ps-3">Всього:</td>
                         <td class="text-end pe-3 fw-bold fs-5 text-success">{{ total_value|floatformat:2 }} ₴</td>

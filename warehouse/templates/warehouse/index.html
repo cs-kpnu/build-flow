@@ -319,8 +319,8 @@
         <!-- 1-й ряд (основні) -->
         <div class="col-6 col-md-3">
             <a href="{% url 'create_order' %}" class="action-btn bg-gradient-order hover-scale">
-                <i class="bi bi-cart-plus-fill text-dark"></i>
-                <span class="text-dark">Замовити</span>
+                <i class="bi bi-cart-plus-fill text-body"></i>
+                <span class="text-body">Замовити</span>
             </a>
         </div>
         <div class="col-6 col-md-3">
@@ -340,8 +340,8 @@
         <!-- Кнопка QR Сканера -->
         <div class="col-6 col-md-3">
              <button type="button" class="action-btn bg-gradient-qr hover-scale w-100" data-bs-toggle="modal" data-bs-target="#qrScannerModal" id="startScanBtn">
-                <i class="bi bi-qr-code-scan text-dark"></i>
-                <span class="text-dark">Скан QR</span>
+                <i class="bi bi-qr-code-scan text-body"></i>
+                <span class="text-body">Скан QR</span>
             </button>
         </div>
     </div>
@@ -360,7 +360,7 @@
                                 <h6 class="text-muted text-uppercase small fw-bold mb-1">Баланс об'єкту</h6>
                                 <h2 class="display-5 fw-bold text-white mb-0">{{ total_value|default:"0" }} <small class="fs-5 text-muted">₴</small></h2>
                             </div>
-                            <div class="p-3 rounded-circle bg-white bg-opacity-10 text-success">
+                            <div class="p-3 rounded-circle bg-opacity-10 text-success">
                                 <i class="bi bi-wallet2 fs-3"></i>
                             </div>
                         </div>
@@ -396,8 +396,8 @@
                             <span class="small text-muted">{{ order.created_at|date:"d.m" }}</span>
                         </div>
                         <span class="badge 
-                            {% if order.status == 'new' %}bg-warning text-dark
-                            {% elif order.status == 'approved' %}bg-info text-dark
+                            {% if order.status == 'new' %}bg-warning text-body
+                            {% elif order.status == 'approved' %}bg-info text-body
                             {% elif order.status == 'purchasing' %}bg-primary
                             {% elif order.status == 'transit' %}bg-secondary
                             {% elif order.status == 'completed' %}bg-success
@@ -509,7 +509,7 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0 fw-bold text-dark">
+        <h5 class="mb-0 fw-bold text-body">
             <i class="bi bi-building me-2 text-primary"></i>Об'єкти будівництва
         </h5>
         <a href="{% url 'objects_comparison' %}" class="btn btn-sm btn-outline-primary">
@@ -536,7 +536,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <h5 class="card-title fw-bold text-dark mb-1">{{ wh.name }}</h5>
+                                    <h5 class="card-title fw-bold text-body mb-1">{{ wh.name }}</h5>
                                     <p class="card-text text-muted small mb-0">
                                         <i class="bi bi-geo-alt me-1"></i>{{ wh.address|default:"Адреса не вказана" }}
                                     </p>
@@ -555,7 +555,7 @@
                                 </div>
                                 <div class="small">
                                     <span class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Відповідальний</span>
-                                    <span class="fw-bold text-dark">
+                                    <span class="fw-bold text-body">
                                         {{ wh.responsible_user.get_full_name|default:"Не призначено" }}
                                     </span>
                                 </div>

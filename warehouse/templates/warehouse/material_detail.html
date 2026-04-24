@@ -15,9 +15,9 @@
                     <li class="breadcrumb-item active">{{ material.name|truncatechars:30 }}</li>
                 </ol>
             </nav>
-            <h1 class="h4 fw-bold text-dark mb-1">{{ material.name }}</h1>
+            <h1 class="h4 fw-bold text-body mb-1">{{ material.name }}</h1>
             <p class="text-muted mb-0">
-                <span class="badge bg-light text-dark border me-2">{{ material.category.name|default:"Без категорії" }}</span>
+                <span class="badge bg-body-secondary text-body border me-2">{{ material.category.name|default:"Без категорії" }}</span>
                 <span class="font-monospace small">Арт. {{ material.article }}</span>
             </p>
         </div>
@@ -59,7 +59,7 @@
         {# === STOCK DISTRIBUTION === #}
         <div class="col-md-5">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 py-3">
+                <div class="card-header border-0 py-3">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-geo-alt me-2 text-primary"></i>Наявність на об'єктах
                     </h5>
@@ -68,7 +68,7 @@
                     {% for item in stock_distribution %}
                     <li class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
                         <div>
-                            <span class="fw-bold text-dark">{{ item.warehouse }}</span>
+                            <span class="fw-bold text-body">{{ item.warehouse }}</span>
                         </div>
                         <span class="badge bg-primary bg-opacity-10 text-primary border border-primary fs-6 px-3">
                             {{ item.quantity|floatformat:2 }} {{ material.unit }}
@@ -84,7 +84,7 @@
                     {% endfor %}
                 </ul>
                 {% if stock_distribution %}
-                <div class="card-footer bg-light text-end py-3">
+                <div class="card-footer bg-body-secondary text-end py-3">
                     <span class="fw-bold">Всього: {{ total_quantity|floatformat:2 }} {{ material.unit }}</span>
                 </div>
                 {% endif %}
@@ -94,7 +94,7 @@
         {# === TRANSACTION HISTORY === #}
         <div class="col-md-7">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 py-3">
+                <div class="card-header border-0 py-3">
                     <h5 class="mb-0 fw-bold">
                         <i class="bi bi-clock-history me-2 text-secondary"></i>Останні операції
                     </h5>
@@ -119,11 +119,11 @@
                                 </td>
                                 <td>
                                     {% if tr.transfer_group_id %}
-                                        <span class="badge bg-info text-dark type-badge">Переміщення</span>
+                                        <span class="badge bg-info text-body type-badge">Переміщення</span>
                                     {% elif tr.transaction_type == 'IN' %}
                                         <span class="badge bg-success type-badge">Прихід</span>
                                     {% elif tr.transaction_type == 'OUT' %}
-                                        <span class="badge bg-warning text-dark type-badge">Витрата</span>
+                                        <span class="badge bg-warning text-body type-badge">Витрата</span>
                                     {% elif tr.transaction_type == 'LOSS' %}
                                         <span class="badge bg-danger type-badge">Втрата</span>
                                     {% endif %}
@@ -158,7 +158,7 @@
     {# === ADDITIONAL INFO === #}
     {% if material.characteristics or material.min_limit > 0 %}
     <div class="card border-0 shadow-sm mt-4">
-        <div class="card-header bg-white border-0 py-3">
+        <div class="card-header border-0 py-3">
             <h5 class="mb-0 fw-bold">
                 <i class="bi bi-info-circle me-2 text-info"></i>Додаткова інформація
             </h5>
@@ -175,7 +175,7 @@
                 <div class="col-md-6 mb-3">
                     <label class="form-label small fw-bold text-muted">Мінімальний ліміт</label>
                     <p class="mb-0">
-                        <span class="badge bg-warning text-dark">{{ material.min_limit }} {{ material.unit }}</span>
+                        <span class="badge bg-warning text-body">{{ material.min_limit }} {{ material.unit }}</span>
                         {% if total_quantity <= material.min_limit %}
                             <span class="badge bg-danger ms-2">Критично низький рівень!</span>
                         {% endif %}

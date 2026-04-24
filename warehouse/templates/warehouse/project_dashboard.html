@@ -39,7 +39,7 @@
                 <div class="card-body">
                     <div class="text-danger small text-uppercase fw-bold">Критичні залишки</div>
                     {% if critical_items %}
-                        <div class="fs-4 fw-bold text-dark">{{ critical_items|length }} позицій</div>
+                        <div class="fs-4 fw-bold text-body">{{ critical_items|length }} позицій</div>
                         <small class="text-muted">Потребують уваги постачання</small>
                     {% else %}
                         <div class="fs-4 fw-bold text-success">0</div>
@@ -67,7 +67,7 @@
         <!-- 2. БЕТОНУВАННЯ (Графік + Таблиця) -->
         <div class="col-lg-6">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-0 fw-bold d-flex justify-content-between align-items-center">
+                <div class="card-header border-0 fw-bold d-flex justify-content-between align-items-center">
                     <span>📊 Прогрес бетонування</span>
                     <a href="{% url 'concrete_analytics' %}" class="btn btn-sm btn-link text-decoration-none">Детальніше &rarr;</a>
                 </div>
@@ -119,7 +119,7 @@
         <!-- 3. ОСТАННІ ПОДІЇ -->
         <div class="col-lg-6">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-0 fw-bold">
+                <div class="card-header border-0 fw-bold">
                     🔔 Останні події на майданчику
                 </div>
                 <div class="list-group list-group-flush">

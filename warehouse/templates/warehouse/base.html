@@ -73,7 +73,7 @@
             transition: margin-left 0.3s;
         }
 
-        header { border-bottom: 1px solid; padding: 15px 25px; }
+        header { padding: 15px 25px; }
 
         .mobile-header { display: none; align-items: center; justify-content: space-between; color: white; padding: 10px 15px; }
 
@@ -360,14 +360,14 @@
     <!-- КОНТЕНТ -->
     <div id="content-wrapper">
         <!-- Верхня панель (Desktop) -->
-        <header class="d-none d-lg-flex justify-content-between align-items-center">
+        <header class="d-none d-lg-flex justify-content-between align-items-center bg-body border-bottom">
             <h5 class="mb-0 fw-bold text-secondary">
                 {% block header_title %}
                     {{ active_warehouse.name|default:"Система управління будівництвом" }}
                 {% endblock %}
             </h5>
             <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-light text-dark border">{{ now|date:"d.m.Y" }}</span>
+                <span class="badge bg-body-secondary text-body border">{{ now|date:"d.m.Y" }}</span>
                 <button id="theme-toggle" class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()" title="Змінити тему">
                     <i class="bi bi-moon-fill" id="theme-icon"></i>
                 </button>

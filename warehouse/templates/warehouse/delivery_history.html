@@ -55,7 +55,7 @@
                         <!-- ІНФО (Центр) -->
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between align-items-start">
-                                <h6 class="fw-bold mb-1 text-dark">{{ item.material.name }}</h6>
+                                <h6 class="fw-bold mb-1 text-body">{{ item.material.name }}</h6>
                                 <small class="text-muted">{{ item.created_at|date:"d.m H:i" }}</small>
                             </div>
                             
@@ -75,9 +75,9 @@
                     <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center small text-muted">
                         <div>
                             {% if item.order %}
-                                <span class="badge bg-light text-dark border">Заявка #{{ item.order.id }}</span>
+                                <span class="badge bg-body-secondary text-body border">Заявка #{{ item.order.id }}</span>
                             {% else %}
-                                <span class="badge bg-light text-secondary border">Без заявки</span>
+                                <span class="badge bg-body-secondary text-secondary border">Без заявки</span>
                             {% endif %}
                         </div>
                         

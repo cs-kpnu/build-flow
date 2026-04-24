@@ -67,16 +67,16 @@
     {# === HEADER === #}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h4 fw-bold text-dark mb-1">
+            <h1 class="h4 fw-bold text-body mb-1">
                 <i class="bi bi-truck me-2 text-primary"></i>Логістичний монітор
             </h1>
             <p class="text-muted small mb-0">Відстеження закупівель та доставок в реальному часі</p>
         </div>
         <div class="d-flex gap-2">
-            <span class="badge bg-warning text-dark fs-6 d-flex align-items-center gap-1">
+            <span class="badge bg-warning text-body fs-6 d-flex align-items-center gap-1">
                 <i class="bi bi-cart"></i> {{ purchasing_orders.count }}
             </span>
-            <span class="badge bg-info text-dark fs-6 d-flex align-items-center gap-1">
+            <span class="badge bg-info text-body fs-6 d-flex align-items-center gap-1">
                 <i class="bi bi-truck"></i> {{ transit_orders.count }}
             </span>
         </div>
@@ -89,19 +89,19 @@
             <div class="card logistics-card shadow-sm logistics-column">
                 <div class="card-header bg-warning bg-opacity-10 border-0 py-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="fw-bold text-dark mb-0">
+                        <h5 class="fw-bold text-body mb-0">
                             <i class="bi bi-cart-fill text-warning me-2"></i>У закупівлі
                         </h5>
-                        <span class="badge bg-warning text-dark rounded-pill fs-6">{{ purchasing_orders.count }}</span>
+                        <span class="badge bg-warning text-body rounded-pill fs-6">{{ purchasing_orders.count }}</span>
                     </div>
                     <p class="text-muted small mb-0 mt-1">Замовлено, очікує відправки</p>
                 </div>
                 <div class="card-body p-3">
                     {% for order in purchasing_orders %}
-                    <div class="order-card purchasing bg-white mb-3 p-3">
+                    <div class="order-card purchasing mb-3 p-3">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                                <span class="fw-bold text-dark">Заявка #{{ order.id }}</span>
+                                <span class="fw-bold text-body">Заявка #{{ order.id }}</span>
                                 {% if order.priority == 'high' %}
                                     <span class="badge bg-danger ms-1"><i class="bi bi-fire"></i></span>
                                 {% endif %}
@@ -111,7 +111,7 @@
 
                         <div class="items-list">
                             {% for item in order.items.all|slice:":3" %}
-                                <div class="text-dark">
+                                <div class="text-body">
                                     {{ item.material.name }}
                                     <span class="text-muted">— {{ item.quantity }} {{ item.material.unit }}</span>
                                 </div>
@@ -124,7 +124,7 @@
                         </div>
 
                         <div class="d-flex align-items-center gap-2 mt-2 mb-3">
-                            <span class="badge bg-light text-dark border route-badge">
+                            <span class="badge bg-body-secondary text-body border route-badge">
                                 <i class="bi bi-shop me-1"></i>
                                 {% if order.selected_supplier %}
                                     {{ order.selected_supplier.name|truncatechars:20 }}
@@ -166,19 +166,19 @@
             <div class="card logistics-card shadow-sm logistics-column">
                 <div class="card-header bg-info bg-opacity-10 border-0 py-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="fw-bold text-dark mb-0">
+                        <h5 class="fw-bold text-body mb-0">
                             <i class="bi bi-truck text-info me-2"></i>В дорозі
                         </h5>
-                        <span class="badge bg-info text-dark rounded-pill fs-6">{{ transit_orders.count }}</span>
+                        <span class="badge bg-info text-body rounded-pill fs-6">{{ transit_orders.count }}</span>
                     </div>
                     <p class="text-muted small mb-0 mt-1">Вантаж їде на об'єкт</p>
                 </div>
                 <div class="card-body p-3">
                     {% for order in transit_orders %}
-                    <div class="order-card transit bg-white mb-3 p-3">
+                    <div class="order-card transit mb-3 p-3">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                                <span class="fw-bold text-dark">Заявка #{{ order.id }}</span>
+                                <span class="fw-bold text-body">Заявка #{{ order.id }}</span>
                                 {% if order.priority == 'high' %}
                                     <span class="badge bg-danger ms-1"><i class="bi bi-fire"></i></span>
                                 {% endif %}
@@ -191,7 +191,7 @@
 
                         <div class="items-list">
                             {% for item in order.items.all|slice:":3" %}
-                                <div class="text-dark">
+                                <div class="text-body">
                                     {{ item.material.name }}
                                     <span class="fw-bold">({{ item.quantity }} {{ item.material.unit }})</span>
                                 </div>
@@ -216,7 +216,7 @@
                         </div>
                         {% endif %}
 
-                        <div class="d-flex align-items-center gap-2 mt-2 mb-2 p-2 bg-light rounded">
+                        <div class="d-flex align-items-center gap-2 mt-2 mb-2 p-2 bg-body-secondary rounded">
                             <div class="text-muted small text-truncate" style="max-width: 40%;">
                                 {% if order.source_warehouse %}
                                     <i class="bi bi-building me-1"></i>{{ order.source_warehouse.name }}
@@ -226,7 +226,7 @@
                                 {% endif %}
                             </div>
                             <i class="bi bi-arrow-right text-primary"></i>
-                            <div class="fw-bold text-dark text-truncate" style="max-width: 40%;">
+                            <div class="fw-bold text-body text-truncate" style="max-width: 40%;">
                                 <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ order.warehouse.name }}
                             </div>
                         </div>
@@ -264,7 +264,7 @@
             </div>
             <div class="modal-body p-4">
                 <p class="text-muted mb-4">
-                    Відправляємо: <strong class="text-dark" id="shipOrderName">...</strong>
+                    Відправляємо: <strong class="text-body" id="shipOrderName">...</strong>
                 </p>
 
                 <h6 class="fw-bold text-primary mb-3">
@@ -293,7 +293,7 @@
                     <div class="form-text">Скан документа, який побачить прораб при прийомі</div>
                 </div>
             </div>
-            <div class="modal-footer bg-light border-0">
+            <div class="modal-footer bg-body-secondary border-0">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
                 <button type="submit" class="btn btn-primary fw-bold px-4">
                     <i class="bi bi-send-check me-2"></i>Підтвердити відправку
