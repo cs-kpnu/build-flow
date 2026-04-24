@@ -26,6 +26,21 @@ def _parse_date(value):
         return None
 
 
+def _apply_date_filter(qs, request, field='date'):
+    """
+    Застосовує фільтри date_from / date_to з GET-параметрів до QuerySet.
+    Повертає (відфільтрований QS, date_from, date_to).
+    Параметр field дозволяє фільтрувати по різних полях (напр. 'expected_date').
+    """
+    date_from = _parse_date(request.GET.get('date_from'))
+    date_to = _parse_date(request.GET.get('date_to'))
+    if date_from:
+        qs = qs.filter(**{f'{field}__gte': date_from})
+    if date_to:
+        qs = qs.filter(**{f'{field}__lte': date_to})
+    return qs, date_from, date_to
+
+
 def _sanitize_cell(value):
     """Зворотня сумісність — делегує до excel_utils.sanitize_cell."""
     return sanitize_cell(value)
@@ -116,13 +131,10 @@ def writeoff_report(request):
     qs = work_writeoffs_qs(qs.select_related('warehouse', 'material', 'created_by'))
     
     # Фільтрація
-    date_from = _parse_date(request.GET.get('date_from'))
-    date_to = _parse_date(request.GET.get('date_to'))
+    qs, date_from, date_to = _apply_date_filter(qs, request)
     reason = request.GET.get('reason') # OUT or LOSS
     wh_id = request.GET.get('warehouse')
 
-    if date_from: qs = qs.filter(date__gte=date_from)
-    if date_to: qs = qs.filter(date__lte=date_to)
     if reason: qs = qs.filter(transaction_type=reason)
     
     if wh_id: 
@@ -390,15 +402,11 @@ def transfer_journal(request):
     Журнал переміщень. 
     Групує IN/OUT транзакції по transfer_group_id.
     """
-    # Фільтр дат
-    date_from = _parse_date(request.GET.get('date_from'))
-    date_to = _parse_date(request.GET.get('date_to'))
-
     # Фільтруємо транзакції по доступу (тільки склади юзера)
     qs = restrict_warehouses_qs(Transaction.objects.all(), request.user)
 
-    if date_from: qs = qs.filter(date__gte=date_from)
-    if date_to: qs = qs.filter(date__lte=date_to)
+    # Фільтр дат
+    qs, date_from, date_to = _apply_date_filter(qs, request)
 
     # Використовуємо enrich_transfers для групування
     journal = enrich_transfers(qs)
@@ -422,10 +430,7 @@ def transfer_analytics(request):
         transfer_group_id__isnull=False
     )
     
-    date_from = _parse_date(request.GET.get('date_from'))
-    date_to = _parse_date(request.GET.get('date_to'))
-    if date_from: qs = qs.filter(date__gte=date_from)
-    if date_to: qs = qs.filter(date__lte=date_to)
+    qs, date_from, date_to = _apply_date_filter(qs, request)
 
     # 1. Топ матеріалів (Pie)
     mat_stats = qs.values('material__name').annotate(c=Count('id')).order_by('-c')[:5]
@@ -464,10 +469,7 @@ def savings_report(request):
     base_qs = restrict_warehouses_qs(Transaction.objects.all(), request.user)
     qs = base_qs.filter(transaction_type='IN', order__isnull=False)
     
-    date_from = _parse_date(request.GET.get('date_from'))
-    date_to = _parse_date(request.GET.get('date_to'))
-    if date_from: qs = qs.filter(date__gte=date_from)
-    if date_to: qs = qs.filter(date__lte=date_to)
+    qs, date_from, date_to = _apply_date_filter(qs, request)
 
     data = []
     total_saved = Decimal("0.00")
@@ -533,12 +535,9 @@ def movement_history(request):
     qs = restrict_warehouses_qs(Transaction.objects.all(), request.user)
     qs = qs.select_related('warehouse', 'material', 'created_by').order_by('-date', '-created_at')
     
-    date_from = _parse_date(request.GET.get('date_from'))
-    date_to = _parse_date(request.GET.get('date_to'))
+    qs, date_from, date_to = _apply_date_filter(qs, request)
     mat_id = request.GET.get('material')
 
-    if date_from: qs = qs.filter(date__gte=date_from)
-    if date_to: qs = qs.filter(date__lte=date_to)
     if mat_id: qs = qs.filter(material_id=mat_id)
     
     paginator = Paginator(qs, 50)
@@ -620,8 +619,6 @@ def planning_report(request):
     """
     Звіт: План закупівель (на основі активних заявок).
     """
-    date_from = _parse_date(request.GET.get('date_from'))
-    date_to = _parse_date(request.GET.get('date_to'))
     f_priority = request.GET.get('priority')
 
     # Вибираємо активні заявки (які ще не виконані і не відхилені)
@@ -630,11 +627,7 @@ def planning_report(request):
     base_qs = restrict_warehouses_qs(Order.objects.all(), request.user)
 
     qs = base_qs.filter(status__in=['new', 'approved', 'purchasing']).select_related('created_by', 'warehouse').order_by('expected_date')
-
-    if date_from:
-        qs = qs.filter(expected_date__gte=date_from)
-    if date_to:
-        qs = qs.filter(expected_date__lte=date_to)
+    qs, date_from, date_to = _apply_date_filter(qs, request, field='expected_date')
     if f_priority:
         qs = qs.filter(priority=f_priority)
         
@@ -691,18 +684,14 @@ def suppliers_rating(request):
     """
     Звіт: Рейтинг постачальників (на основі історії закупівель).
     """
-    date_from = _parse_date(request.GET.get('date_from'))
-    date_to = _parse_date(request.GET.get('date_to'))
-
     # Тут ми фільтруємо постачальників на основі доступних користувачу замовлень
     # Спочатку дістаємо всі доступні замовлення
     allowed_orders = restrict_warehouses_qs(Order.objects.all(), request.user)
 
     # Фільтр по датах (за датою створення замовлення)
-    if date_from:
-        allowed_orders = allowed_orders.filter(created_at__date__gte=date_from)
-    if date_to:
-        allowed_orders = allowed_orders.filter(created_at__date__lte=date_to)
+    allowed_orders, date_from, date_to = _apply_date_filter(
+        allowed_orders, request, field='created_at__date'
+    )
     
     # Отримуємо всіх постачальників, а кількість замовлень рахуємо тільки по дозволених
     # FIX: Correct backward relation to OrderItem via 'orderitem' and then to Order
