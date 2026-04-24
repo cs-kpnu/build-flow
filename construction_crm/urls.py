@@ -7,6 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
 from django.db import connection
+from warehouse.views.auth import RateLimitedLoginView
 
 
 def health_check(request):
@@ -29,7 +30,10 @@ urlpatterns = [
     # Маршрути вашого додатку (warehouse)
     path('', include('warehouse.urls')),
 
-    # Стандартні маршрути аутентифікації (login, logout, password_change тощо)
+    # Login з rate limiting (переопрацьовує вбудований accounts/login/)
+    path('accounts/login/', RateLimitedLoginView.as_view(), name='login'),
+
+    # Стандартні маршрути аутентифікації (logout, password_change тощо)
     # Django шукатиме шаблони в registration/login.html, але ми їх перевизначили в warehouse/templates/registration
     path('accounts/', include('django.contrib.auth.urls')),
 ]

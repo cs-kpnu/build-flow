@@ -116,6 +116,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'warehouse.middleware.CSPMiddleware',
 ]
 
 ROOT_URLCONF = 'construction_crm.urls'
@@ -312,6 +313,22 @@ if DJANGO_ENV == 'production':
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+
+# --- CSP (Content-Security-Policy) ---
+# CSP_REPORT_ONLY=True → заголовок Report-Only (не блокує, тільки звітує).
+# Використовуйте Report-Only при першому розгортанні, щоб виявити порушення.
+# CSP_EXTRA — dict для перевизначення або розширення окремих директив.
+# Приклад: CSP_EXTRA = {'connect-src': "'self' wss://my-ws-server.com"}
+CSP_REPORT_ONLY = parse_bool(os.getenv('DJANGO_CSP_REPORT_ONLY', 'False'))
+_csp_extra_raw = os.getenv('DJANGO_CSP_EXTRA', '')
+CSP_EXTRA = {}
+if _csp_extra_raw:
+    for part in _csp_extra_raw.split(';'):
+        part = part.strip()
+        if ' ' in part:
+            key, _, val = part.partition(' ')
+            CSP_EXTRA[key.strip()] = val.strip()
 
 
 # --- LOGGING ---
