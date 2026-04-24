@@ -79,6 +79,9 @@ class Warehouse(models.Model):
     class Meta:
         verbose_name = "Склад / Об'єкт"
         verbose_name_plural = "Склади та Об'єкти"
+        indexes = [
+            models.Index(fields=['responsible_user'], name='warehouse_responsible_user_idx'),
+        ]
 
     def __str__(self):
         return self.name
@@ -270,7 +273,7 @@ class Order(SoftDeleteMixin, models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
-    material = models.ForeignKey(Material, on_delete=models.CASCADE)
+    material = models.ForeignKey(Material, on_delete=models.PROTECT, verbose_name="Матеріал")
     
     # DECIMAL UPDATE: Кількість (3 знаки)
     quantity = models.DecimalField(
@@ -322,8 +325,8 @@ class Transaction(SoftDeleteMixin, models.Model):
     ]
 
     transaction_type = models.CharField("Тип", max_length=10, choices=TYPE_CHOICES)
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='transactions')
-    material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='transactions')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='transactions')
+    material = models.ForeignKey(Material, on_delete=models.PROTECT, related_name='transactions')
     
     # DECIMAL UPDATE: Кількість (3 знаки), Ціна (2 знаки)
     quantity = models.DecimalField("Кількість", max_digits=14, decimal_places=3)
@@ -367,6 +370,9 @@ class SupplierPrice(models.Model):
 
     class Meta:
         unique_together = ('supplier', 'material')
+        indexes = [
+            models.Index(fields=['supplier', 'material'], name='sp_supplier_material_idx'),
+        ]
 
 
 # --- AUDIT LOG ---

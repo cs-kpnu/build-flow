@@ -15,6 +15,7 @@ seed_data.py — Повне наповнення бази демо-даними 
 """
 
 import random
+import logging
 from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User, Group
@@ -22,6 +23,8 @@ from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
 from datetime import timedelta
+
+logger = logging.getLogger('warehouse')
 
 from warehouse.models import (
     Warehouse, Category, Material, Supplier, Transaction,
@@ -626,7 +629,8 @@ class Command(BaseCommand):
         items_fact = {item.id: item.quantity for item in order.items.all()}
         try:
             inventory.process_order_receipt(order, items_fact, mgr, comment='Прийнято на склад по накладній')
-        except Exception:
+        except Exception as exc:
+            logger.warning("seed: process_order_receipt failed for order #%s: %s", order.pk, exc)
             order.status = 'completed'
             order.save()
 
@@ -675,8 +679,9 @@ class Command(BaseCommand):
                         description=f'Переміщення: {mat_name} → {target.name}',
                         date=t_date,
                     )
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("seed: create_transfer skipped (%s %s→%s): %s",
+                                 mat_name, main.name, target.name, exc)
 
         self.stdout.write(' > Переміщення між складами створено.')
 
@@ -725,8 +730,9 @@ class Command(BaseCommand):
                     stage=stage,
                     date=d,
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("seed: create_writeoff skipped (%s %s %s): %s",
+                             ttype, mat.name, wh.name, exc)
 
         self.stdout.write(' > Списання та втрати згенеровано.')
 
