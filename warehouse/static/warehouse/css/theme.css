@@ -93,6 +93,19 @@ header {
 }
 
 /* =====================================================
+   Таблиці — thead адаптивний
+   ===================================================== */
+thead th {
+    background-color: var(--bs-tertiary-bg) !important;
+    color: var(--bs-secondary-color);
+}
+
+tfoot.fw-bold td,
+tfoot.fw-bold th {
+    background-color: var(--bs-tertiary-bg) !important;
+}
+
+/* =====================================================
    Dark mode — misc overrides
    ===================================================== */
 [data-bs-theme="dark"] .badge.bg-light {
