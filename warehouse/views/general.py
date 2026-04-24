@@ -88,7 +88,10 @@ def index(request):
         if active_wh:
             context['my_orders'] = Order.objects.filter(
                 warehouse=active_wh
-            ).exclude(status__in=['completed', 'rejected']).order_by('-updated_at')[:5]
+            ).exclude(status__in=['completed', 'rejected']) \
+             .select_related('created_by') \
+             .prefetch_related('items__material') \
+             .order_by('-updated_at')[:5]
             
         return render(request, 'warehouse/index.html', context)
 

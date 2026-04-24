@@ -230,7 +230,8 @@ def process_order_receipt(order, items_data, user, proof_photo=None, comment="")
     # === ФАЗА 1: Валідація всіх позицій ===
     validated_items = []
 
-    for item in order.items.all():
+    # select_related щоб уникнути N lazy-load запитів до material у циклі
+    for item in order.items.select_related('material').all():
         qty_raw = items_data.get(item.id) or items_data.get(str(item.id))
 
         if qty_raw is None:
@@ -263,21 +264,26 @@ def process_order_receipt(order, items_data, user, proof_photo=None, comment="")
     if not validated_items:
         raise ValueError("Жодну позицію не прийнято. Перевірте введені кількості.")
 
-    # === ФАЗА 2: Створення транзакцій (тільки якщо всі позиції валідні) ===
-    created_transactions = []
+    # === ФАЗА 2: Batch-операції (замість N окремих INSERT/UPDATE) ===
+    today = timezone.now().date()
+    description = comment or f"Прийом по заявці #{order.id}"
     materials_to_update_price = set()
+
+    # Готуємо списки для bulk-операцій
+    items_to_update = []    # OrderItem.quantity_fact
+    txns_to_create = []     # Transaction objects
 
     for vi in validated_items:
         item = vi['item']
         qty_dec = vi['qty_dec']
         price_dec = vi['price_dec']
 
-        # Оновлюємо факт в позиції заявки
+        # Накопичуємо зміни quantity_fact
         item.quantity_fact = qty_dec
-        item.save()
+        items_to_update.append(item)
 
-        # 1. Створюємо прихід (IN) на цільовий склад
-        in_txn = Transaction.objects.create(
+        # IN-транзакція на цільовий склад
+        txns_to_create.append(Transaction(
             transaction_type='IN',
             warehouse=order.warehouse,
             material=item.material,
@@ -285,16 +291,15 @@ def process_order_receipt(order, items_data, user, proof_photo=None, comment="")
             price=price_dec,
             created_by=user,
             order=order,
-            date=timezone.now().date(),
+            date=today,
             transfer_group_id=transfer_group_id,
             photo=proof_photo,
-            description=comment or f"Прийом по заявці #{order.id}"
-        )
-        created_transactions.append(in_txn)
+            description=description,
+        ))
 
-        # 2. Якщо це внутрішнє переміщення, створюємо списання (OUT) з джерела
+        # OUT-транзакція з джерела (для переміщень)
         if order.source_warehouse and transfer_group_id:
-            Transaction.objects.create(
+            txns_to_create.append(Transaction(
                 transaction_type='OUT',
                 warehouse=order.source_warehouse,
                 material=item.material,
@@ -302,15 +307,22 @@ def process_order_receipt(order, items_data, user, proof_photo=None, comment="")
                 price=price_dec,
                 created_by=user,
                 order=order,
-                date=timezone.now().date(),
+                date=today,
                 transfer_group_id=transfer_group_id,
-                description=f"Переміщення по заявці #{order.id} на {order.warehouse.name}"
-            )
+                description=f"Переміщення по заявці #{order.id} на {order.warehouse.name}",
+            ))
 
         if not order.source_warehouse and price_dec > 0:
             materials_to_update_price.add(item.material)
 
-    # Оновлюємо середні ціни після циклу (один запит на матеріал, не N+1)
+    # 1 UPDATE замість N UPDATE-ів
+    from warehouse.models import OrderItem
+    OrderItem.objects.bulk_update(items_to_update, ['quantity_fact'])
+
+    # 1 INSERT замість N INSERT-ів
+    created_transactions = Transaction.objects.bulk_create(txns_to_create)
+
+    # Оновлюємо середні ціни (один запит на унікальний матеріал)
     for material in materials_to_update_price:
         material.update_material_avg_price()
 

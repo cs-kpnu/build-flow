@@ -1,13 +1,11 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
-from django.http import HttpResponse
 from django.utils import timezone
-import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment
 import json
 from decimal import Decimal
 from ..models import StageLimit, Transaction
+from ..services.excel_utils import create_excel_response
 
 @login_required
 def mechanisms_analytics(request):
@@ -81,41 +79,24 @@ def mechanisms_analytics(request):
 
     # EXPORT TO EXCEL
     if request.GET.get('export') == 'excel':
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Звіт по механізмах"
-        
-        # Styles
-        header_font = Font(bold=True, color="FFFFFF")
-        header_fill = PatternFill(start_color="E07A5F", end_color="E07A5F", fill_type="solid")
-        center_align = Alignment(horizontal='center')
-        
         headers = ['Об\'єкт', 'Етап', 'Механізм', 'Характеристики', 'Од.', 'План', 'Факт', 'Різниця', 'Статус']
-        ws.append(headers)
-        
-        for cell in ws[1]:
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = center_align
-
+        rows = []
         for row in report_data:
             st = "Норма"
             if row['status'] == 'over': st = "ПЕРЕПРАЦЮВАННЯ"
             elif row['status'] == 'warning': st = "Увага"
-            
-            ws.append([
-                row['warehouse'], row['stage'], row['material'], 
-                row['characteristics'], row['unit'], row['plan'], 
-                row['fact'], row['diff'], st
+            rows.append([
+                row['warehouse'], row['stage'], row['material'],
+                row['characteristics'], row['unit'], row['plan'],
+                row['fact'], row['diff'], st,
             ])
-            
-        for col in ws.columns:
-            ws.column_dimensions[col[0].column_letter].width = 15
-
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = f'attachment; filename=Mechanisms_Report.xlsx'
-        wb.save(response)
-        return response
+        return create_excel_response(
+            headers, rows,
+            filename=f"Mechanisms_Report_{timezone.now().strftime('%Y-%m-%d')}.xlsx",
+            sheet_title="Звіт по механізмах",
+            header_color="E07A5F",
+            fixed_col_width=15,
+        )
 
     return render(request, 'warehouse/mechanisms_report.html', {
         'report_data': report_data,

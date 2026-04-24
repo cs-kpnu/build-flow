@@ -146,7 +146,10 @@ def order_detail(request, pk):
     Детальний перегляд заявки: інформація, позиції, коментарі (чат).
     Перевіряє доступ до складу заявки.
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(
+        Order.objects.select_related('warehouse', 'created_by', 'source_warehouse'),
+        pk=pk
+    )
 
     # Перевірка доступу до складу заявки
     enforce_warehouse_access_or_404(request.user, order.warehouse)
@@ -225,7 +228,7 @@ def order_edit(request, pk):
     """
     Редагування заявки та її позицій (Items через FormSet).
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(Order.objects.select_related('warehouse'), pk=pk)
 
     # Перевірка доступу до складу заявки
     enforce_warehouse_access_or_404(request.user, order.warehouse)
@@ -267,7 +270,7 @@ def order_approve(request, pk):
     """
     Погодження заявки.
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(Order.objects.select_related('warehouse'), pk=pk)
     enforce_warehouse_access_or_404(request.user, order.warehouse)
 
     if request.method == 'POST':
@@ -300,7 +303,7 @@ def order_reject(request, pk):
     """
     Відхилення заявки.
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(Order.objects.select_related('warehouse'), pk=pk)
     enforce_warehouse_access_or_404(request.user, order.warehouse)
 
     if request.method == 'POST':
@@ -335,7 +338,7 @@ def order_to_purchasing(request, pk):
     """
     Передача погодженої заявки в закупівлю (approved → purchasing).
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(Order.objects.select_related('warehouse'), pk=pk)
     enforce_warehouse_access_or_404(request.user, order.warehouse)
 
     if request.method == 'POST':
@@ -448,7 +451,7 @@ def split_order(request, pk):
     Розділення заявки на декілька частин (наприклад, різні постачальники).
     Працює з items, а не з legacy material field.
     """
-    original_order = get_object_or_404(Order, pk=pk)
+    original_order = get_object_or_404(Order.objects.select_related('warehouse'), pk=pk)
     enforce_warehouse_access_or_404(request.user, original_order.warehouse)
     items = original_order.items.select_related('material').all()
     
@@ -555,7 +558,7 @@ def manager_process_order(request, pk):
     Редирект на деталі заявки, оскільки процес погодження змінено.
     Відображає шаблон-повідомлення.
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(Order.objects.select_related('warehouse'), pk=pk)
     enforce_warehouse_access_or_404(request.user, order.warehouse)
     return render(request, 'warehouse/manager_process_order.html', {'order': order})
 
@@ -566,6 +569,6 @@ def create_po(request, pk):
     """
     Формування PO (Purchase Order).
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(Order.objects.select_related('warehouse'), pk=pk)
     enforce_warehouse_access_or_404(request.user, order.warehouse)
     return redirect('print_order_pdf', pk=pk)

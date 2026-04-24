@@ -9,12 +9,11 @@ from datetime import timedelta
 import datetime
 from django.utils import timezone
 import json
-import openpyxl
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from decimal import Decimal, ROUND_HALF_UP
 
 from ..models import Transaction, Order, OrderItem, Warehouse, Material, Supplier, AuditLog
 from ..decorators import staff_required
+from ..services.excel_utils import create_excel_response, sanitize_cell
 
 
 def _parse_date(value):
@@ -28,80 +27,8 @@ def _parse_date(value):
 
 
 def _sanitize_cell(value):
-    """Запобігає Excel formula injection (= + - @ на початку рядка)."""
-    if isinstance(value, str) and value and value[0] in ('=', '+', '-', '@', '\t', '\r'):
-        return "'" + value
-    return value
-
-
-# ==============================================================================
-# HELPER: EXCEL EXPORT
-# ==============================================================================
-
-def create_excel_response(headers, data_rows, filename, sheet_title="Report"):
-    """
-    Створює Excel файл зі стилізованими заголовками та даними.
-
-    Args:
-        headers: список заголовків колонок
-        data_rows: список рядків даних (кожен рядок - список значень)
-        filename: назва файлу для завантаження
-        sheet_title: назва листа
-
-    Returns:
-        HttpResponse з Excel файлом
-    """
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = sheet_title
-
-    # Styles
-    header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
-    border = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
-    )
-
-    # Headers
-    ws.append(headers)
-    for cell in ws[1]:
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.border = border
-        cell.alignment = Alignment(horizontal='center', vertical='center')
-
-    # Data rows
-    for row_idx, row_data in enumerate(data_rows, start=2):
-        for col_idx, value in enumerate(row_data, start=1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=_sanitize_cell(value))
-            cell.border = border
-            # Вирівнювання чисел праворуч
-            if isinstance(value, (int, float, Decimal)):
-                cell.alignment = Alignment(horizontal='right')
-
-    # Autosize columns
-    for col in ws.columns:
-        max_length = 0
-        column = col[0].column_letter
-        for cell in col:
-            try:
-                cell_len = len(str(cell.value)) if cell.value is not None else 0
-                if cell_len > max_length:
-                    max_length = cell_len
-            except (TypeError, AttributeError):
-                pass
-        adjusted_width = min(max_length + 2, 50)  # Max width 50
-        ws.column_dimensions[column].width = adjusted_width
-
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = f'attachment; filename={filename}'
-    wb.save(response)
-    return response
+    """Зворотня сумісність — делегує до excel_utils.sanitize_cell."""
+    return sanitize_cell(value)
 from ..forms import PeriodReportForm
 from .utils import (
     get_user_warehouses,
@@ -434,54 +361,17 @@ def stock_balance_report(request):
 
     # EXPORT TO EXCEL
     if request.GET.get('export') == 'excel':
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Залишки"
-        
-        # Styles
-        header_font = Font(bold=True, color="FFFFFF")
-        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
-        border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-        
         headers = ['Склад', 'Матеріал', 'Характеристики', 'Од.', 'Кількість', 'Ціна', 'Сума']
-        ws.append(headers)
-        
-        for cell in ws[1]:
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.border = border
-            
-        row_idx = 2
-        for item in report_data:
-            ws.cell(row=row_idx, column=1, value=item['warehouse']).border = border
-            ws.cell(row=row_idx, column=2, value=item['material']).border = border
-            ws.cell(row=row_idx, column=3, value=item['characteristics']).border = border
-            ws.cell(row=row_idx, column=4, value=item['unit']).border = border
-            ws.cell(row=row_idx, column=5, value=item['quantity']).border = border
-            # Excel потребує float або int
-            ws.cell(row=row_idx, column=6, value=float(item['avg_price'])).border = border
-            ws.cell(row=row_idx, column=7, value=float(item['total_sum'])).border = border
-            row_idx += 1
-            
-        # Autosize columns
-        for col in ws.columns:
-            max_length = 0
-            column = col[0].column_letter
-            for cell in col:
-                try:
-                    cell_len = len(str(cell.value)) if cell.value is not None else 0
-                    if cell_len > max_length:
-                        max_length = cell_len
-                except (TypeError, AttributeError):
-                    pass
-            adjusted_width = (max_length + 2)
-            ws.column_dimensions[column].width = adjusted_width
-
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        rows = [
+            [
+                item['warehouse'], item['material'], item['characteristics'],
+                item['unit'], item['quantity'],
+                float(item['avg_price']), float(item['total_sum']),
+            ]
+            for item in report_data
+        ]
         filename = f"Stock_Balance_{timezone.now().strftime('%Y-%m-%d')}.xlsx"
-        response['Content-Disposition'] = f'attachment; filename={filename}'
-        wb.save(response)
-        return response
+        return create_excel_response(headers, rows, filename, sheet_title="Залишки")
 
     return render(request, 'warehouse/stock_balance_report.html', {
         'report_data': report_data,

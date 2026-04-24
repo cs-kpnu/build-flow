@@ -8,8 +8,6 @@ from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.db.models import Q
 import json
 import logging
-import openpyxl
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from decimal import Decimal
 
 logger = logging.getLogger('warehouse')
@@ -18,6 +16,7 @@ from ..models import Order, OrderItem, Warehouse, Material, Supplier, AuditLog, 
 from ..forms import OrderForm, OrderItemFormSet
 from ..services import inventory
 from ..services.inventory import InsufficientStockError
+from ..services.excel_utils import create_excel_response
 from .utils import log_audit, check_access, capture_order_snapshot, compute_order_diff
 from ..decorators import rate_limit, staff_required
 
@@ -51,32 +50,12 @@ def order_list(request):
 
     # EXPORT TO EXCEL
     if request.GET.get('export') == 'excel':
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Журнал заявок"
-
-        # Styles
-        header_font = Font(bold=True, color="FFFFFF")
-        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
-        border = Border(
-            left=Side(style='thin'), right=Side(style='thin'),
-            top=Side(style='thin'), bottom=Side(style='thin')
-        )
-
-        # Headers
         headers = ['ID', 'Дата', 'Тип', 'Об\'єкт', 'Статус', 'Пріоритет', 'Автор', 'Позицій', 'Сума (грн)']
-        ws.append(headers)
-        for cell in ws[1]:
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.border = border
-            cell.alignment = Alignment(horizontal='center', vertical='center')
-
-        # Data
+        rows = []
         for order in orders:
             order_type = "Переміщення" if order.source_warehouse else "Закупівля"
             total_sum = sum(item.quantity * (item.material.current_avg_price or 0) for item in order.items.all())
-            ws.append([
+            rows.append([
                 order.id,
                 order.created_at.strftime('%d.%m.%Y'),
                 order_type,
@@ -85,29 +64,10 @@ def order_list(request):
                 order.get_priority_display(),
                 order.created_by.get_full_name() if order.created_by else "—",
                 order.items.count(),
-                float(total_sum)
+                float(total_sum),
             ])
-
-        # Autosize columns
-        for col in ws.columns:
-            max_length = 0
-            column = col[0].column_letter
-            for cell in col:
-                try:
-                    cell_len = len(str(cell.value)) if cell.value else 0
-                    if cell_len > max_length:
-                        max_length = cell_len
-                except:
-                    pass
-            ws.column_dimensions[column].width = min(max_length + 2, 50)
-
-        response = HttpResponse(
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
         filename = f"Orders_{timezone.now().strftime('%Y-%m-%d')}.xlsx"
-        response['Content-Disposition'] = f'attachment; filename={filename}'
-        wb.save(response)
-        return response
+        return create_excel_response(headers, rows, filename, sheet_title="Журнал заявок")
 
     return render(request, 'warehouse/order_list.html', {
         'orders': orders,
@@ -249,8 +209,14 @@ def logistics_monitor(request):
     """
     Монітор логіста: заявки в статусі 'purchasing' (треба везти) та 'transit' (їдуть).
     """
-    purchasing_orders = Order.objects.filter(status='purchasing').order_by('expected_date')
-    transit_orders = Order.objects.filter(status='transit').order_by('expected_date')
+    purchasing_orders = Order.objects.filter(status='purchasing') \
+        .select_related('warehouse', 'created_by') \
+        .prefetch_related('items__material') \
+        .order_by('expected_date')
+    transit_orders = Order.objects.filter(status='transit') \
+        .select_related('warehouse', 'created_by') \
+        .prefetch_related('items__material') \
+        .order_by('expected_date')
     
     return render(request, 'warehouse/logistics.html', {
         'purchasing_orders': purchasing_orders,
@@ -293,7 +259,11 @@ def confirm_receipt(request, pk):
     GET  — показує форму прийому (confirm_receipt.html).
     POST — викликає сервіс inventory.process_order_receipt і редіректить.
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(
+        Order.objects.select_related('warehouse', 'source_warehouse')
+                     .prefetch_related('items__material'),
+        pk=pk
+    )
 
     # Перевірка доступу до складу
     if not check_access(request.user, order.warehouse):
@@ -357,8 +327,10 @@ def check_order_duplicates(request):
     recent_orders = Order.objects.filter(
         warehouse_id=wh_id,
         created_at__gte=three_days_ago
-    ).exclude(status__in=['completed', 'rejected', 'draft']).order_by('-created_at')
-    
+    ).exclude(status__in=['completed', 'rejected', 'draft']) \
+     .prefetch_related('items__material') \
+     .order_by('-created_at')
+
     if recent_orders.exists():
         data = []
         for o in recent_orders:
@@ -377,11 +349,15 @@ def print_order_pdf(request, pk):
     """
     Генерація сторінки для друку заявки.
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(
+        Order.objects.select_related('warehouse', 'created_by')
+                     .prefetch_related('items__material'),
+        pk=pk
+    )
     # Перевірка доступу
     if not request.user.is_staff and not check_access(request.user, order.warehouse):
         return HttpResponse("⛔ Немає доступу", status=403)
-        
+
     return render(request, 'warehouse/print_order.html', {'order': order})
 
 

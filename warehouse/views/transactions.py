@@ -135,8 +135,11 @@ def transaction_detail(request, pk):
     """
     Детальний перегляд однієї транзакції.
     """
-    trans = get_object_or_404(Transaction, pk=pk)
-    
+    trans = get_object_or_404(
+        Transaction.objects.select_related('material', 'warehouse', 'created_by', 'order'),
+        pk=pk
+    )
+
     # Перевірка доступу до складу транзакції
     enforce_warehouse_access_or_404(request.user, trans.warehouse)
     
