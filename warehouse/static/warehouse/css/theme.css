@@ -1,0 +1,106 @@
+/* =====================================================
+   BudSklad ERP — Light / Dark Theme Variables
+   Bootstrap 5.3 data-bs-theme handles all BS components.
+   These variables cover custom layout (sidebar, header).
+   ===================================================== */
+
+/* --- Light (default) -------------------------------- */
+:root {
+    --theme-body-bg:            #f8f9fa;
+    --theme-sidebar-bg:         #212529;
+    --theme-sidebar-text:       rgba(255, 255, 255, 0.75);
+    --theme-sidebar-text-hover: #ffffff;
+    --theme-sidebar-hover-bg:   rgba(255, 255, 255, 0.10);
+    --theme-sidebar-border:     rgba(255, 255, 255, 0.12);
+    --theme-sidebar-heading:    #6c757d;
+    --theme-sidebar-muted:      #6c757d;
+    --theme-header-bg:          #ffffff;
+    --theme-header-border:      #dee2e6;
+    --theme-mobile-header-bg:   #212529;
+}
+
+/* --- Dark -------------------------------------------  */
+[data-bs-theme="dark"] {
+    --theme-body-bg:            #1a1b1e;
+    --theme-sidebar-bg:         #101113;
+    --theme-sidebar-text:       rgba(255, 255, 255, 0.65);
+    --theme-sidebar-text-hover: #ffffff;
+    --theme-sidebar-hover-bg:   rgba(255, 255, 255, 0.07);
+    --theme-sidebar-border:     rgba(255, 255, 255, 0.08);
+    --theme-sidebar-heading:    #4a4d55;
+    --theme-sidebar-muted:      #5c6370;
+    --theme-header-bg:          #25262b;
+    --theme-header-border:      #2e3035;
+    --theme-mobile-header-bg:   #101113;
+}
+
+/* =====================================================
+   Layout
+   ===================================================== */
+body {
+    background-color: var(--theme-body-bg) !important;
+}
+
+/* =====================================================
+   Sidebar
+   ===================================================== */
+#sidebar {
+    background: var(--theme-sidebar-bg) !important;
+}
+
+#sidebar .nav-link {
+    color: var(--theme-sidebar-text) !important;
+}
+
+#sidebar .nav-link:hover,
+#sidebar .nav-link.active {
+    color: var(--theme-sidebar-text-hover) !important;
+    background: var(--theme-sidebar-hover-bg) !important;
+}
+
+.sidebar-heading {
+    color: var(--theme-sidebar-heading) !important;
+}
+
+#sidebar .border-secondary {
+    border-color: var(--theme-sidebar-border) !important;
+}
+
+#sidebar .text-muted {
+    color: var(--theme-sidebar-muted) !important;
+}
+
+/* =====================================================
+   Header (desktop top bar)
+   ===================================================== */
+header {
+    background: var(--theme-header-bg) !important;
+    border-bottom-color: var(--theme-header-border) !important;
+}
+
+/* =====================================================
+   Mobile header
+   ===================================================== */
+.mobile-header {
+    background: var(--theme-mobile-header-bg) !important;
+}
+
+/* =====================================================
+   Theme toggle button — smooth icon swap
+   ===================================================== */
+#theme-toggle {
+    transition: color 0.2s, border-color 0.2s;
+}
+
+/* =====================================================
+   Dark mode — misc overrides
+   ===================================================== */
+[data-bs-theme="dark"] .badge.bg-light {
+    background-color: #2e3035 !important;
+    color: #c1c2c5 !important;
+    border-color: #373a40 !important;
+}
+
+[data-bs-theme="dark"] .overlay {
+    background: rgba(0, 0, 0, 0.7);
+}

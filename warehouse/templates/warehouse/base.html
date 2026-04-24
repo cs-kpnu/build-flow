@@ -1,54 +1,60 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}BudSklad ERP{% endblock %}</title>
     
+    <!-- Тема — застосовуємо до рендеру щоб уникнути мигання -->
+    <script>
+        (function () {
+            var t = localStorage.getItem('budsklad-theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', t);
+        })();
+    </script>
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <!-- Tom Select (Autocomplete) -->
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <!-- Теми (light / dark) -->
+    <link rel="stylesheet" href="{% static 'warehouse/css/theme.css' %}">
     
     <style>
         /* === ОСНОВНІ СТИЛІ === */
-        body { 
-            min-height: 100vh; 
-            display: flex; 
-            background-color: #f8f9fa; 
+        body {
+            min-height: 100vh;
+            display: flex;
             overflow-x: hidden;
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
-        
+
         /* --- САЙДБАР (Ліве меню) --- */
-        #sidebar { 
-            width: 280px; 
-            background: #212529; 
-            color: #fff; 
-            display: flex; 
-            flex-direction: column; 
-            position: fixed; 
-            top: 0; bottom: 0; left: 0; 
-            transition: all 0.3s; 
+        #sidebar {
+            width: 280px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; bottom: 0; left: 0;
+            transition: all 0.3s;
             z-index: 1000;
         }
-        
-        #sidebar .nav-link { color: rgba(255,255,255,0.75); padding: 10px 20px; font-weight: 500; font-size: 0.95rem; }
-        #sidebar .nav-link:hover, #sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
+
+        #sidebar .nav-link { padding: 10px 20px; font-weight: 500; font-size: 0.95rem; }
         #sidebar .nav-link i { margin-right: 10px; width: 20px; text-align: center; }
-        
+
         /* Розділювачі в меню */
         .sidebar-heading {
             font-size: 0.75rem;
             text-transform: uppercase;
-            color: #6c757d;
             padding: 15px 20px 5px;
             font-weight: bold;
         }
-        
+
         /* Мобільний режим */
         @media (max-width: 991.98px) {
             #sidebar { transform: translateX(-100%); }
@@ -56,25 +62,25 @@
             #content-wrapper { margin-left: 0 !important; }
             .mobile-header { display: flex !important; }
         }
-        
+
         /* --- ОСНОВНИЙ КОНТЕНТ --- */
-        #content-wrapper { 
-            flex-grow: 1; 
-            margin-left: 280px; 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
+        #content-wrapper {
+            flex-grow: 1;
+            margin-left: 280px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
             transition: margin-left 0.3s;
         }
-        
-        header { background: #fff; border-bottom: 1px solid #dee2e6; padding: 15px 25px; }
-        
-        .mobile-header { display: none; align-items: center; justify-content: space-between; background: #212529; color: white; padding: 10px 15px; }
-        
+
+        header { border-bottom: 1px solid; padding: 15px 25px; }
+
+        .mobile-header { display: none; align-items: center; justify-content: space-between; color: white; padding: 10px 15px; }
+
         /* --- УТИЛІТИ --- */
-        .overlay { 
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-            background: rgba(0,0,0,0.5); z-index: 999; 
+        .overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 999;
         }
         .overlay.show { display: block; }
 
@@ -362,6 +368,9 @@
             </h5>
             <div class="d-flex align-items-center gap-3">
                 <span class="badge bg-light text-dark border">{{ now|date:"d.m.Y" }}</span>
+                <button id="theme-toggle" class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()" title="Змінити тему">
+                    <i class="bi bi-moon-fill" id="theme-icon"></i>
+                </button>
                 {% if user.is_staff %}
                     <a href="{% url 'admin:index' %}" target="_blank" class="btn btn-sm btn-outline-dark">Адмінка</a>
                 {% endif %}
@@ -391,6 +400,29 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     
     <script>
+        /* ── Тема ─────────────────────────────────────────── */
+        function _applyTheme(theme) {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            var icon = document.getElementById('theme-icon');
+            if (icon) {
+                icon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+            }
+        }
+
+        function toggleTheme() {
+            var current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            var next = current === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('budsklad-theme', next);
+            _applyTheme(next);
+        }
+
+        // Синхронізуємо іконку після завантаження DOM
+        document.addEventListener('DOMContentLoaded', function () {
+            var saved = localStorage.getItem('budsklad-theme') || 'light';
+            _applyTheme(saved);
+        });
+
+        /* ── Сайдбар ─────────────────────────────────────── */
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('show');
             document.querySelector('.overlay').classList.toggle('show');
