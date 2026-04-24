@@ -7,7 +7,7 @@
 <style>
     /* Стилі для рядків Formset */
     .item-row { transition: background-color 0.2s; }
-    .item-row:hover { background-color: #f8f9fa; }
+    .item-row:hover { background-color: var(--bs-tertiary-bg); }
 
     /* Виправляємо відображення TomSelect у таблиці */
     .ts-wrapper {
@@ -43,8 +43,8 @@
     .upload-box {
         position: relative;
         min-height: 160px;
-        background-color: #f8f9fa;
-        border: 2px dashed #dee2e6;
+        background-color: var(--bs-tertiary-bg);
+        border: 2px dashed var(--bs-border-color);
         border-radius: 0.5rem;
         transition: all 0.2s ease-in-out;
         display: flex;
@@ -57,7 +57,7 @@
 
     /* Підсвітка при Drag & Drop */
     .upload-box.is-dragover {
-        background-color: #e9ecef;
+        background-color: var(--bs-border-color);
         border-color: #0d6efd;
         color: #0d6efd;
     }
@@ -94,7 +94,7 @@
         padding: 15px;
         position: relative;
         z-index: 10;
-        background: #fff;
+        background: var(--bs-body-bg);
         height: 100%;
     }
 
@@ -116,7 +116,7 @@
     }
     
     .upload-box.has-file {
-        background-color: #fff;
+        background-color: var(--bs-body-bg);
         border-style: solid; /* Робимо рамку суцільною */
     }
 

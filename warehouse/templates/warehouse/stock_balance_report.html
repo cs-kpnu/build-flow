@@ -6,8 +6,8 @@
 {% block extra_css %}
 <style>
     .filter-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
-        border: 1px solid #e9ecef;
+        background: linear-gradient(135deg, var(--bs-tertiary-bg) 0%, var(--bs-body-bg) 100%);
+        border: 1px solid var(--bs-border-color);
         border-radius: 12px;
     }
     .table-container {
@@ -18,13 +18,13 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        background: #f8f9fa;
+        background: var(--bs-tertiary-bg);
     }
     .stock-row {
         transition: background-color 0.15s;
     }
     .stock-row:hover {
-        background-color: #f8f9fa;
+        background-color: var(--bs-tertiary-bg);
     }
     .stock-row.critical {
         background-color: #fff5f5;
@@ -40,7 +40,7 @@
     }
     @media print {
         .no-print { display: none !important; }
-        .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+        .card { box-shadow: none !important; border: 1px solid var(--bs-border-color) !important; }
     }
 </style>
 {% endblock %}

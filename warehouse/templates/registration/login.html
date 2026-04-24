@@ -46,7 +46,7 @@
         .brand-name {
             font-size: 1.6rem;
             font-weight: 700;
-            color: #fff;
+            color: var(--bs-body-bg);
             letter-spacing: -0.5px;
             margin: 0;
         }
@@ -113,7 +113,7 @@
         }
 
         .form-control:focus {
-            background: #fff;
+            background: var(--bs-body-bg);
             border-color: #2563eb;
             box-shadow: none;
         }
@@ -121,7 +121,7 @@
         .form-control:focus + .input-group-text,
         .input-group:focus-within .input-group-text {
             border-color: #2563eb;
-            background: #fff;
+            background: var(--bs-body-bg);
         }
 
         .btn-login {
@@ -132,7 +132,7 @@
             font-size: 1rem;
             font-weight: 600;
             letter-spacing: 0.3px;
-            color: #fff;
+            color: var(--bs-body-bg);
             width: 100%;
             margin-top: 0.5rem;
             box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
@@ -143,7 +143,7 @@
             background: linear-gradient(135deg, #1d4ed8, #1e40af);
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
-            color: #fff;
+            color: var(--bs-body-bg);
         }
 
         .btn-login:active {
@@ -181,7 +181,7 @@
 
         /* Mobile */
         @media (max-width: 480px) {
-            body { padding: 0; align-items: flex-start; background: #fff; }
+            body { padding: 0; align-items: flex-start; background: var(--bs-body-bg); }
             .login-wrapper { max-width: 100%; }
             .brand { padding-top: 3rem; background: linear-gradient(135deg, #0f172a, #1e3a5f); padding-bottom: 2rem; margin-bottom: 0; }
             .card { border-radius: 24px 24px 0 0; margin-top: -16px; box-shadow: none; min-height: calc(100vh - 180px); }

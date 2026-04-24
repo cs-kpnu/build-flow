@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     /* Стилі для прораба (темна тема або адаптація) */
-    body.foreman-mode { background-color: #212529; color: #e9ecef; }
+    body.foreman-mode { background-color: var(--bs-body-color); color: var(--bs-border-color); }
     
     .delivery-card {
         border-left: 5px solid #198754; /* Зелена смужка = Прихід */
@@ -17,8 +17,8 @@
         width: 60px; height: 60px; 
         object-fit: cover; 
         border-radius: 8px;
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
+        background-color: var(--bs-tertiary-bg);
+        border: 1px solid var(--bs-border-color);
     }
 </style>
 {% endblock %}
